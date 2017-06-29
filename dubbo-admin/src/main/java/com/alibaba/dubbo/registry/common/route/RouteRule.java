@@ -158,7 +158,7 @@ public class RouteRule {
     public static Map<String, MatchPair> parseRule(String rule)
             throws ParseException {
     	Map<String, MatchPair> condition = new HashMap<String, RouteRule.MatchPair>();
-        if(StringUtils.isBlank(rule)) {
+        if(StringUtils.isEmpty(rule)) {
             return condition;
         }        
         // 匹配或不匹配Key-Value对
@@ -274,7 +274,7 @@ public class RouteRule {
     }
     
     public static RouteRule parse(String rule) throws ParseException {
-        if(StringUtils.isBlank(rule)) {
+        if(StringUtils.isEmpty(rule)) {
             throw new ParseException("Illegal blank route rule", 0);
         }
          
@@ -303,13 +303,13 @@ public class RouteRule {
         
         for(Entry<String, String> entry : params.entrySet()) {
             String valueListString = entry.getValue();
-            if(StringUtils.isBlank(valueListString)) {
+            if(StringUtils.isEmpty(valueListString)) {
                 continue;
             }
             String[] list = VALUE_LIST_SEPARATOR.split(valueListString);
             Set<String> set = new HashSet<String>();
             for(String item : list) {
-                if(StringUtils.isBlank(item)) {
+                if(StringUtils.isEmpty(item)) {
                     continue;
                 }
                 set.add(item.trim());
@@ -329,13 +329,13 @@ public class RouteRule {
         }
         for(Entry<String, String> entry : notParams.entrySet()) {
             String valueListString = entry.getValue();
-            if(StringUtils.isBlank(valueListString)) {
+            if(StringUtils.isEmpty(valueListString)) {
                 continue;
             }
             String[] list = VALUE_LIST_SEPARATOR.split(valueListString);
             Set<String> set = new HashSet<String>();
             for(String item : list) {
-                if(StringUtils.isBlank(item)) {
+                if(StringUtils.isEmpty(item)) {
                     continue;
                 }
                 set.add(item.trim());

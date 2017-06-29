@@ -23,7 +23,6 @@ package com.alibaba.dubbo.rpc;
  * @see com.alibaba.dubbo.rpc.Invoker#invoke(Invocation)
  * @author shawn.qianx
  * @author william.liangf
- * @export
  */
 public final class RpcException extends RuntimeException {
 

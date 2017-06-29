@@ -1,20 +1,6 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.alibaba.dubbo.common.beanutil;
+
+import com.alibaba.dubbo.common.utils.Assert;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -75,7 +61,7 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     }
 
     public JavaBeanDescriptor(String className, int type) {
-        notEmpty(className, "class name is empty");
+        Assert.notNull(className, "class name is empty");
         if (!isValidType(type)) {
             throw new IllegalArgumentException(
                     "type [ " + type + " ] is unsupported");
@@ -130,7 +116,7 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     }
 
     public Object setProperty(Object propertyName, Object propertyValue) {
-        notNull(propertyName, "Property name is null");
+        Assert.notNull(propertyName, "Property name is null");
         return properties.put(propertyName, propertyValue);
     }
 
@@ -181,12 +167,12 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     }
 
     public Object getProperty(Object propertyName) {
-        notNull(propertyName, "Property name is null");
+        Assert.notNull(propertyName, "Property name is null");
         return properties.get(propertyName);
     }
 
     public boolean containsProperty(Object propertyName) {
-        notNull(propertyName, "Property name is null");
+        Assert.notNull(propertyName, "Property name is null");
         return properties.containsKey(propertyName);
     }
 
@@ -202,19 +188,4 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
         return TYPE_MIN <= type && type <= TYPE_MAX;
     }
 
-    private void notNull(Object obj, String message) {
-        if (obj == null) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private void notEmpty(String string, String message) {
-        if (isEmpty(string)) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private boolean isEmpty(String string) {
-        return string == null || "".equals(string.trim());
-    }
 }

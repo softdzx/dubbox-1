@@ -51,11 +51,11 @@ final public class MockInvoker<T> implements Invoker<T> {
         if (invocation instanceof RpcInvocation) {
             ((RpcInvocation) invocation).setInvoker(this);
         }
-        if (StringUtils.isBlank(mock)) {
+        if (StringUtils.isEmpty(mock)) {
             mock = getUrl().getParameter(Constants.MOCK_KEY);
         }
 
-        if (StringUtils.isBlank(mock)) {
+        if (StringUtils.isEmpty(mock)) {
             throw new RpcException(new IllegalAccessException("mock can not be null. url :" + url));
         }
         mock = normallizeMock(URL.decode(mock));
@@ -76,7 +76,7 @@ final public class MockInvoker<T> implements Invoker<T> {
         } else if (mock.startsWith(Constants.THROW_PREFIX)) {
             mock = mock.substring(Constants.THROW_PREFIX.length()).trim();
             mock = mock.replace('`', '"');
-            if (StringUtils.isBlank(mock)) {
+            if (StringUtils.isEmpty(mock)) {
                 throw new RpcException(" mocked exception for Service degradation. ");
             } else { //用户自定义类
                 Throwable t = getThrowable(mock);

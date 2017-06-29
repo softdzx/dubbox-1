@@ -1,22 +1,10 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.rpc;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
+
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,7 +21,7 @@ public class RpcResult implements Result, Serializable {
 
     private Throwable exception;
 
-    private Map<String, String> attachments = new HashMap<>();
+    private Map<String, String> attachments = Maps.newHashMap();
 
     public RpcResult() {
     }
@@ -101,14 +89,14 @@ public class RpcResult implements Result, Serializable {
 
     public String getAttachment(String key, String defaultValue) {
         String result = attachments.get(key);
-        if (result == null || result.length() == 0) {
+        if (Strings.isNullOrEmpty(result)) {
             result = defaultValue;
         }
         return result;
     }
 
     public void setAttachments(Map<String, String> map) {
-        if (map != null && map.size() > 0) {
+        if (!CollectionUtils.isEmpty(map)) {
             attachments.putAll(map);
         }
     }

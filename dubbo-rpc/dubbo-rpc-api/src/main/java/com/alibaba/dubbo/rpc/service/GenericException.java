@@ -22,7 +22,6 @@ import com.alibaba.dubbo.common.utils.StringUtils;
  * 
  * @serial Don't change the class name and properties.
  * @author william.liangf
- * @export
  */
 public class GenericException extends RuntimeException {
 

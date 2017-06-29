@@ -1,44 +1,26 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config;
-
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.common.utils.CollectionUtils;
-import com.alibaba.dubbo.common.utils.ConfigUtils;
-import com.alibaba.dubbo.common.utils.ReflectUtils;
-import com.alibaba.dubbo.common.utils.StringUtils;
+import com.alibaba.dubbo.common.utils.*;
 import com.alibaba.dubbo.config.support.Parameter;
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 配置解析的工具方法、公共方法
  *
  * @author william.liangf
- * @export
  */
 public abstract class AbstractConfig implements Serializable {
 
@@ -73,7 +55,7 @@ public abstract class AbstractConfig implements Serializable {
         this.id = id;
     }
 
-    private static final Map<String, String> legacyProperties = new HashMap<>();
+    private static final Map<String, String> legacyProperties = Maps.newHashMap();
 
     static {
         legacyProperties.put("dubbo.protocol.name", "dubbo.service.protocol");
@@ -87,7 +69,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     private static String convertLegacyValue(String key, String value) {
-        if (value != null && value.length() > 0) {
+        if (Strings.isNullOrEmpty(value)) {
             if ("dubbo.service.max.retry.providers".equals(key)) {
                 return String.valueOf(Integer.parseInt(value) - 1);
             } else if ("dubbo.service.allow.no.provider".equals(key)) {
@@ -152,18 +134,18 @@ public abstract class AbstractConfig implements Serializable {
                     if (config.getId() != null && config.getId().length() > 0) {
                         String pn = prefix + config.getId() + "." + property;
                         value = System.getProperty(pn);
-                        if (!StringUtils.isBlank(value)) {
-                            logger.info("Use System Property " + pn + " to config dubbo");
+                        if (!Strings.isNullOrEmpty(value)) {
+                            LogHelper.info(logger, "Use System Property " + pn + " to config dubbo");
                         }
                     }
-                    if (value == null || value.length() == 0) {
+                    if (Strings.isNullOrEmpty(value)) {
                         String pn = prefix + property;
                         value = System.getProperty(pn);
-                        if (!StringUtils.isBlank(value)) {
-                            logger.info("Use System Property " + pn + " to config dubbo");
+                        if (!Strings.isNullOrEmpty(value)) {
+                            LogHelper.info(logger, "Use System Property " + pn + " to config dubbo");
                         }
                     }
-                    if (value == null || value.length() == 0) {
+                    if (Strings.isNullOrEmpty(value)) {
                         Method getter;
                         try {
                             getter = config.getClass().getMethod("get" + name.substring(3));
@@ -238,12 +220,7 @@ public abstract class AbstractConfig implements Serializable {
                     }
                     int i = name.startsWith("get") ? 3 : 2;
                     String prop = StringUtils.camelToSplitName(name.substring(i, i + 1).toLowerCase() + name.substring(i + 1), ".");
-                    String key;
-                    if (parameter != null && parameter.key().length() > 0) {
-                        key = parameter.key();
-                    } else {
-                        key = prop;
-                    }
+                    String key = parameter != null && parameter.key().length() > 0 ? parameter.key() : prop;
                     Object value = method.invoke(config);
                     String str = String.valueOf(value).trim();
                     if (value != null && str.length() > 0) {
@@ -363,7 +340,7 @@ public abstract class AbstractConfig implements Serializable {
 
     protected static void checkExtension(Class<?> type, String property, String value) {
         checkName(property, value);
-        if (value != null && value.length() > 0
+        if (!Strings.isNullOrEmpty(value)
                 && !ExtensionLoader.getExtensionLoader(type).hasExtension(value)) {
             throw new IllegalStateException("No such extension " + value + " for " + property + "/" + type.getName());
         }
@@ -371,7 +348,7 @@ public abstract class AbstractConfig implements Serializable {
 
     protected static void checkMultiExtension(Class<?> type, String property, String value) {
         checkMultiName(property, value);
-        if (value != null && value.length() > 0) {
+        if (!Strings.isNullOrEmpty(value)) {
             String[] values = value.split("\\s*[,]+\\s*");
             for (String v : values) {
                 if (v.startsWith(Constants.REMOVE_VALUE_PREFIX)) {
@@ -430,7 +407,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     protected static void checkProperty(String property, String value, int maxlength, Pattern pattern) {
-        if (value == null || value.length() == 0) {
+        if (Strings.isNullOrEmpty(value)) {
             return;
         }
         if (value.length() > maxlength) {
@@ -439,16 +416,15 @@ public abstract class AbstractConfig implements Serializable {
         if (pattern != null) {
             Matcher matcher = pattern.matcher(value);
             if (!matcher.matches()) {
-                throw new IllegalStateException("Invalid " + property + "=\"" + value + "\" contain illegal charactor, only digit, letter, '-', '_' and '.' is legal.");
+                throw new IllegalStateException("Invalid " + property + "=\"" + value +
+                        "\" contain illegal charactor, only digit, letter, '-', '_' and '.' is legal.");
             }
         }
     }
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (logger.isInfoEnabled()) {
-                logger.info("Run shutdown hook now.");
-            }
+            LogHelper.info(logger, "Run shutdown hook now.");
             ProtocolConfig.destroyAll();
         }, "DubboShutdownHook"));
     }

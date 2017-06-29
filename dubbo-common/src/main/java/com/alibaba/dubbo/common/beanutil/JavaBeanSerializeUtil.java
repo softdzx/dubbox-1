@@ -19,6 +19,7 @@ import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
+import com.google.common.collect.Maps;
 
 import java.lang.reflect.*;
 import java.util.Collection;
@@ -47,7 +48,7 @@ public final class JavaBeanSerializeUtil {
         if (obj instanceof JavaBeanDescriptor) {
             return (JavaBeanDescriptor) obj;
         }
-        IdentityHashMap<Object, JavaBeanDescriptor> cache = new IdentityHashMap<Object, JavaBeanDescriptor>();
+        IdentityHashMap<Object, JavaBeanDescriptor> cache = Maps.newIdentityHashMap();
         return createDescriptorIfAbsent(obj, accessor, cache);
     }
 
@@ -172,7 +173,7 @@ public final class JavaBeanSerializeUtil {
         if (beanDescriptor == null) {
             return null;
         }
-        IdentityHashMap<JavaBeanDescriptor, Object> cache = new IdentityHashMap<JavaBeanDescriptor, Object>();
+        IdentityHashMap<JavaBeanDescriptor, Object> cache = Maps.newIdentityHashMap();
         Object result = instantiateForDeserialize(beanDescriptor, loader, cache);
         deserializeInternal(result, beanDescriptor, loader, cache);
         return result;
@@ -195,7 +196,7 @@ public final class JavaBeanSerializeUtil {
                 Array.set(result, index++, item);
             }
         } else if (beanDescriptor.isCollectionType()) {
-            Collection collection = (Collection) result;
+            Collection<Object> collection = (Collection<Object>) result;
             for (Map.Entry<Object, Object> entry : beanDescriptor) {
                 Object item = entry.getValue();
                 if (item instanceof JavaBeanDescriptor) {
@@ -253,10 +254,8 @@ public final class JavaBeanSerializeUtil {
                         if (field != null) {
                             field.set(result, value);
                         }
-                    } catch (NoSuchFieldException e1) {
-                        LogHelper.warn(logger, "Failed to set field value", e1);
-                    } catch (IllegalAccessException e1) {
-                        LogHelper.warn(logger, "Failed to set field value", e1);
+                    } catch (Exception e) {
+                        LogHelper.warn(logger, "Failed to set field value", e);
                     }
                 }
             }

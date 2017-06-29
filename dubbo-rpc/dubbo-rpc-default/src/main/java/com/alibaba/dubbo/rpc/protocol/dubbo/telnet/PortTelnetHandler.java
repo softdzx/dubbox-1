@@ -15,8 +15,7 @@
  */
 package com.alibaba.dubbo.rpc.protocol.dubbo.telnet;
 
-import java.util.Collection;
-
+import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.remoting.Channel;
@@ -25,10 +24,13 @@ import com.alibaba.dubbo.remoting.exchange.ExchangeServer;
 import com.alibaba.dubbo.remoting.telnet.TelnetHandler;
 import com.alibaba.dubbo.remoting.telnet.support.Help;
 import com.alibaba.dubbo.rpc.protocol.dubbo.DubboProtocol;
+import com.google.common.base.Strings;
+
+import java.util.Collection;
 
 /**
  * ServerTelnetHandler
- * 
+ *
  * @author william.liangf
  */
 @Activate
@@ -40,29 +42,26 @@ public class PortTelnetHandler implements TelnetHandler {
         StringBuilder buf = new StringBuilder();
         String port = null;
         boolean detail = false;
-        if (message.length() > 0) {
+        if (!Strings.isNullOrEmpty(message)) {
             String[] parts = message.split("\\s+");
             for (String part : parts) {
                 if ("-l".equals(part)) {
                     detail = true;
                 } else {
-                    if (! StringUtils.isInteger(part)) {
+                    if (!StringUtils.isInteger(part)) {
                         return "Illegal port " + part + ", must be integer.";
                     }
                     port = part;
                 }
             }
         }
-        if (port == null || port.length() == 0) {
+        if (Strings.isNullOrEmpty(port)) {
             for (ExchangeServer server : DubboProtocol.getDubboProtocol().getServers()) {
                 if (buf.length() > 0) {
                     buf.append("\r\n");
                 }
-                if (detail) {
-                    buf.append(server.getUrl().getProtocol() + "://" + server.getUrl().getAddress());
-                } else {
-                    buf.append(server.getUrl().getPort());
-                }
+                URL url = server.getUrl();
+                buf.append(detail ? url.getProtocol() + "://" + url.getAddress() : url.getPort());
             }
         } else {
             int p = Integer.parseInt(port);
@@ -79,11 +78,7 @@ public class PortTelnetHandler implements TelnetHandler {
                     if (buf.length() > 0) {
                         buf.append("\r\n");
                     }
-                    if (detail) {
-                        buf.append(c.getRemoteAddress() + " -> " + c.getLocalAddress());
-                    } else {
-                        buf.append(c.getRemoteAddress());
-                    }
+                    buf.append(detail ? c.getRemoteAddress() + " -> " + c.getLocalAddress() : c.getRemoteAddress());
                 }
             } else {
                 buf.append("No such port " + port);

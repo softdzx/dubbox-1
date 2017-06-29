@@ -45,8 +45,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
     private final AtomicInteger refenceCount = new AtomicInteger(0);
     
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap;
-    
-    
+
     public ReferenceCountExchangeClient(ExchangeClient client, ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap) {
         this.client = client;
         refenceCount.incrementAndGet();

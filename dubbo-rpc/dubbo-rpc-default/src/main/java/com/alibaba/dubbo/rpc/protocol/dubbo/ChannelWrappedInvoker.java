@@ -1,21 +1,4 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.rpc.protocol.dubbo;
-
-import java.net.InetSocketAddress;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
@@ -26,27 +9,25 @@ import com.alibaba.dubbo.remoting.TimeoutException;
 import com.alibaba.dubbo.remoting.exchange.ExchangeClient;
 import com.alibaba.dubbo.remoting.exchange.support.header.HeaderExchangeClient;
 import com.alibaba.dubbo.remoting.transport.ClientDelegate;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcInvocation;
-import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.protocol.AbstractInvoker;
 
+import java.net.InetSocketAddress;
+
 /**
- * 基于已有channel的invoker. 
- * 
+ * 基于已有channel的invoker.
+ *
  * @author chao.liuc
  */
 class ChannelWrappedInvoker<T> extends AbstractInvoker<T> {
 
     private final Channel channel;
-    private final String serviceKey ; 
+    private final String serviceKey;
 
     public ChannelWrappedInvoker(Class<T> serviceType, Channel channel, URL url, String serviceKey) {
 
-        super(serviceType, url, new String[] { Constants.GROUP_KEY,
-                Constants.TOKEN_KEY, Constants.TIMEOUT_KEY });
+        super(serviceType, url, new String[]{Constants.GROUP_KEY,
+                Constants.TOKEN_KEY, Constants.TIMEOUT_KEY});
         this.channel = channel;
         this.serviceKey = serviceKey;
     }
@@ -62,16 +43,12 @@ class ChannelWrappedInvoker<T> extends AbstractInvoker<T> {
 
         try {
             if (getUrl().getMethodParameter(invocation.getMethodName(), Constants.ASYNC_KEY, false)) { // 不可靠异步
-                currentClient.send(inv,getUrl().getMethodParameter(invocation.getMethodName(), Constants.SENT_KEY, false));
+                currentClient.send(inv, getUrl().getMethodParameter(invocation.getMethodName(), Constants.SENT_KEY, false));
                 return new RpcResult();
             }
             int timeout = getUrl().getMethodParameter(invocation.getMethodName(),
                     Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
-            if (timeout > 0) {
-                return (Result) currentClient.request(inv, timeout).get();
-            } else {
-                return (Result) currentClient.request(inv).get();
-            }
+            return timeout > 0 ? (Result) currentClient.request(inv, timeout).get() : (Result) currentClient.request(inv).get();
         } catch (RpcException e) {
             throw e;
         } catch (TimeoutException e) {
@@ -86,7 +63,7 @@ class ChannelWrappedInvoker<T> extends AbstractInvoker<T> {
     public static class ChannelWrapper extends ClientDelegate {
 
         private final Channel channel;
-        private final URL     url;
+        private final URL url;
 
         public ChannelWrapper(Channel channel) {
             this.channel = channel;

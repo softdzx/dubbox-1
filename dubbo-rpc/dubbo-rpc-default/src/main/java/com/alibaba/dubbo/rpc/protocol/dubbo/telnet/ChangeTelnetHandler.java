@@ -20,21 +20,23 @@ import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.telnet.TelnetHandler;
 import com.alibaba.dubbo.remoting.telnet.support.Help;
 import com.alibaba.dubbo.rpc.Exporter;
+import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.protocol.dubbo.DubboProtocol;
+import com.google.common.base.Strings;
 
 /**
  * ChangeServiceTelnetHandler
- * 
+ *
  * @author william.liangf
  */
 @Activate
 @Help(parameter = "[service]", summary = "Change default service.", detail = "Change default service.")
 public class ChangeTelnetHandler implements TelnetHandler {
-    
+
     public static final String SERVICE_KEY = "telnet.service";
 
     public String telnet(Channel channel, String message) {
-        if (message == null || message.length() == 0) {
+        if (Strings.isNullOrEmpty(message)) {
             return "Please input service name, eg: \r\ncd XxxService\r\ncd com.xxx.XxxService";
         }
         StringBuilder buf = new StringBuilder();
@@ -45,9 +47,10 @@ public class ChangeTelnetHandler implements TelnetHandler {
         } else {
             boolean found = false;
             for (Exporter<?> exporter : DubboProtocol.getDubboProtocol().getExporters()) {
-                if (message.equals(exporter.getInvoker().getInterface().getSimpleName())
-                        || message.equals(exporter.getInvoker().getInterface().getName())
-                        || message.equals(exporter.getInvoker().getUrl().getPath())) {
+                Invoker<?> invoker = exporter.getInvoker();
+                if (message.equals(invoker.getInterface().getSimpleName())
+                        || message.equals(invoker.getInterface().getName())
+                        || message.equals(invoker.getUrl().getPath())) {
                     found = true;
                     break;
                 }

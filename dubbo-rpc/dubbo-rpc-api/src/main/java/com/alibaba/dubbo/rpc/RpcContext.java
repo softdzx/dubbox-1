@@ -17,10 +17,17 @@ package com.alibaba.dubbo.rpc;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.common.utils.NetUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -127,12 +134,8 @@ public class RpcContext {
         if (address == null) {
             return false;
         }
-        String host;
-        if (address.getAddress() == null) {
-            host = address.getHostName();
-        } else {
-            host = address.getAddress().getHostAddress();
-        }
+        InetAddress inetAddress = address.getAddress();
+        String host = null == inetAddress ? address.getHostName() : inetAddress.getHostAddress();
         return url.getPort() == address.getPort() &&
                 NetUtils.filterLocalHost(url.getIp()).equals(NetUtils.filterLocalHost(host));
     }
@@ -324,7 +327,7 @@ public class RpcContext {
         String host = localAddress == null ? null :
                 localAddress.getAddress() == null ? localAddress.getHostName()
                         : NetUtils.filterLocalHost(localAddress.getAddress().getHostAddress());
-        if (host == null || host.length() == 0) {
+        if (Strings.isNullOrEmpty(host)) {
             return NetUtils.getLocalHost();
         }
         return host;
@@ -471,8 +474,8 @@ public class RpcContext {
 
     public RpcContext setInvokers(List<Invoker<?>> invokers) {
         this.invokers = invokers;
-        if (invokers != null && invokers.size() > 0) {
-            List<URL> urls = new ArrayList<>(invokers.size());
+        if (!CollectionUtils.isEmpty(invokers)) {
+            List<URL> urls = Lists.newArrayListWithCapacity(invokers.size());
             for (Invoker<?> invoker : invokers) {
                 urls.add(invoker.getUrl());
             }
@@ -521,7 +524,7 @@ public class RpcContext {
     @Deprecated
     @SuppressWarnings({"unchecked", "rawtypes"})
     public List<Invoker<?>> getInvokers() {
-        return invokers == null && invoker != null ? Collections.singletonList(invoker) : invokers;
+        return !CollectionUtils.isEmpty(invokers) ? Collections.singletonList(invoker) : invokers;
     }
 
     /**
@@ -593,8 +596,6 @@ public class RpcContext {
 
     /**
      * oneway调用，只发送请求，不接收返回结果.
-     *
-     * @param runable runable
      */
     public void asyncCall(Runnable runable) {
         try {

@@ -53,7 +53,7 @@ public class Register extends Shell {
             	for(Map.Entry<String, String> e : url2query.entrySet()) {
             	   Map<String, String> query = StringUtils.parseQueryString(e.getValue()); 
             	   String app = query.get("application");
-            	   if(StringUtils.isBlank(app)) {
+            	   if(StringUtils.isEmpty(app)) {
             	       throw new IllegalStateException("No application for service(" + serviceName + "): "
             	               + e.getKey() + "?" + e.getValue());
             	   }

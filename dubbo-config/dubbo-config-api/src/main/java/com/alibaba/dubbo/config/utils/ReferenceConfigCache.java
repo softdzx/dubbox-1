@@ -79,20 +79,20 @@ public class ReferenceConfigCache {
     public static final KeyGenerator DEFAULT_KEY_GENERATOR = new KeyGenerator() {
         public String generateKey(ReferenceConfig<?> referenceConfig) {
             String iName = referenceConfig.getInterface();
-            if (StringUtils.isBlank(iName)) {
+            if (StringUtils.isEmpty(iName)) {
                 Class<?> clazz = referenceConfig.getInterfaceClass();
                 iName = clazz.getName();
             }
-            if (StringUtils.isBlank(iName)) {
+            if (StringUtils.isEmpty(iName)) {
                 throw new IllegalArgumentException("No interface info in ReferenceConfig" + referenceConfig);
             }
 
             StringBuilder ret = new StringBuilder();
-            if (!StringUtils.isBlank(referenceConfig.getGroup())) {
+            if (!StringUtils.isEmpty(referenceConfig.getGroup())) {
                 ret.append(referenceConfig.getGroup()).append("/");
             }
             ret.append(iName);
-            if (!StringUtils.isBlank(referenceConfig.getVersion())) {
+            if (!StringUtils.isEmpty(referenceConfig.getVersion())) {
                 ret.append(":").append(referenceConfig.getVersion());
             }
             return ret.toString();

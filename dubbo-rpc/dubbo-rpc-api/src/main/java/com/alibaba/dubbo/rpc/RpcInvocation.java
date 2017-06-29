@@ -17,6 +17,8 @@ package com.alibaba.dubbo.rpc;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -27,20 +29,20 @@ import java.util.Map;
 /**
  * RPC Invocation.
  *
- * @serial Don't change the class name and properties.
  * @author qian.lei
+ * @serial Don't change the class name and properties.
  */
 public class RpcInvocation implements Invocation, Serializable {
 
     private static final long serialVersionUID = -4355285085441097045L;
 
-    private String               methodName;
+    private String methodName;
 
-    private Class<?>[]           parameterTypes;
+    private Class<?>[] parameterTypes;
 
-    private Object[]             arguments;
+    private Object[] arguments;
 
-    private Map<String, String>  attachments;
+    private Map<String, String> attachments;
 
     private transient Invoker<?> invoker;
 
@@ -100,7 +102,7 @@ public class RpcInvocation implements Invocation, Serializable {
         this.methodName = methodName;
         this.parameterTypes = parameterTypes == null ? new Class<?>[0] : parameterTypes;
         this.arguments = arguments == null ? new Object[0] : arguments;
-        this.attachments = attachments == null ? new HashMap<>() : attachments;
+        this.attachments = attachments == null ? Maps.newHashMap() : attachments;
         this.invoker = invoker;
     }
 
@@ -141,42 +143,42 @@ public class RpcInvocation implements Invocation, Serializable {
     }
 
     public void setAttachments(Map<String, String> attachments) {
-        this.attachments = attachments == null ? new HashMap<>() : attachments;
+        this.attachments = attachments == null ? Maps.newHashMap() : attachments;
     }
 
     public void setAttachment(String key, String value) {
         if (attachments == null) {
-            attachments = new HashMap<>();
+            attachments = Maps.newHashMap();
         }
         attachments.put(key, value);
     }
 
     public void setAttachmentIfAbsent(String key, String value) {
         if (attachments == null) {
-            attachments = new HashMap<>();
+            attachments = Maps.newHashMap();
         }
-        if (! attachments.containsKey(key)) {
-        	attachments.put(key, value);
+        if (!attachments.containsKey(key)) {
+            attachments.put(key, value);
         }
     }
 
     public void addAttachments(Map<String, String> attachments) {
-    	if (attachments == null) {
-    		return;
-    	}
-    	if (this.attachments == null) {
-    		this.attachments = new HashMap<>();
+        if (attachments == null) {
+            return;
         }
-    	this.attachments.putAll(attachments);
+        if (this.attachments == null) {
+            this.attachments = Maps.newHashMap();
+        }
+        this.attachments.putAll(attachments);
     }
 
     public void addAttachmentsIfAbsent(Map<String, String> attachments) {
-    	if (attachments == null) {
-    		return;
-    	}
-    	for (Map.Entry<String, String> entry : attachments.entrySet()) {
-    		setAttachmentIfAbsent(entry.getKey(), entry.getValue());
-    	}
+        if (attachments == null) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : attachments.entrySet()) {
+            setAttachmentIfAbsent(entry.getKey(), entry.getValue());
+        }
     }
 
     public String getAttachment(String key) {
@@ -191,7 +193,7 @@ public class RpcInvocation implements Invocation, Serializable {
             return defaultValue;
         }
         String value = attachments.get(key);
-        if (value == null || value.length() == 0) {
+        if (Strings.isNullOrEmpty(value)) {
             return defaultValue;
         }
         return value;

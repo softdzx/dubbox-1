@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.rpc.protocol.dubbo;
 
 import com.alibaba.dubbo.common.Constants;
@@ -20,6 +5,7 @@ import com.alibaba.dubbo.common.Parameters;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
@@ -73,9 +59,7 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     private void initClient() throws RemotingException {
         if (client != null)
             return;
-        if (logger.isInfoEnabled()) {
-            logger.info("Lazy connect to " + url);
-        }
+        LogHelper.info(logger, "Lazy connect to " + url);
         connectLock.lock();
         try {
             if (client != null)
@@ -97,11 +81,8 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     }
 
     public InetSocketAddress getRemoteAddress() {
-        if (client == null) {
-            return InetSocketAddress.createUnresolved(url.getHost(), url.getPort());
-        } else {
-            return client.getRemoteAddress();
-        }
+        return null == client ? InetSocketAddress.createUnresolved(url.getHost(), url.getPort()) :
+                client.getRemoteAddress();
     }
 
     public ResponseFuture request(Object request, int timeout) throws RemotingException {
@@ -118,7 +99,7 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     private void warning(Object request) {
         if (requestWithWarning) {
             if (warningcount.get() % 5000 == 0) {
-                logger.warn(new IllegalStateException("safe guard client , should not be called ,must have a bug."));
+                LogHelper.warn(logger, new IllegalStateException("safe guard client , should not be called ,must have a bug."));
             }
             warningcount.incrementAndGet();
         }
@@ -130,19 +111,12 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     }
 
     public boolean isConnected() {
-        if (client == null) {
-            return initialState;
-        } else {
-            return client.isConnected();
-        }
+        return null == client ? initialState : client.isConnected();
     }
 
     public InetSocketAddress getLocalAddress() {
-        if (client == null) {
-            return InetSocketAddress.createUnresolved(NetUtils.getLocalHost(), 0);
-        } else {
-            return client.getLocalAddress();
-        }
+        return null == client ? InetSocketAddress.createUnresolved(NetUtils.getLocalHost(), 0) :
+                client.getLocalAddress();
     }
 
     public ExchangeHandler getExchangeHandler() {
@@ -189,11 +163,7 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     }
 
     public Object getAttribute(String key) {
-        if (client == null) {
-            return null;
-        } else {
-            return client.getAttribute(key);
-        }
+        return null == client ? null : client.getAttribute(key);
     }
 
     public void setAttribute(String key, Object value) {

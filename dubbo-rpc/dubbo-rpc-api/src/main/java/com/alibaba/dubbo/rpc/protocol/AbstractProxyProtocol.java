@@ -1,40 +1,19 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.alibaba.dubbo.rpc.protocol;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.rpc.Exporter;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.ProxyFactory;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.*;
+import com.google.common.collect.Lists;
+
+import java.util.List;
 
 /**
  * AbstractProxyProtocol
- * 
+ *
  * @author william.liangf
  */
 public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
-    private final List<Class<?>> rpcExceptions = new CopyOnWriteArrayList<>();
+    private final List<Class<?>> rpcExceptions = Lists.newCopyOnWriteArrayList();
 
     private ProxyFactory proxyFactory;
 
@@ -47,7 +26,7 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         }
     }
 
-    public void addRpcException(Class<?> exception) {
+    private void addRpcException(Class<?> exception) {
         this.rpcExceptions.add(exception);
     }
 
@@ -60,11 +39,11 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
     }
 
     @SuppressWarnings("unchecked")
-	public <T> Exporter<T> export(final Invoker<T> invoker) throws RpcException {
+    public <T> Exporter<T> export(final Invoker<T> invoker) throws RpcException {
         final String uri = serviceKey(invoker.getUrl());
         Exporter<T> exporter = (Exporter<T>) exporterMap.get(uri);
         if (exporter != null) {
-        	return exporter;
+            return exporter;
         }
         final Runnable runnable = doExport(proxyFactory.getProxy(invoker), invoker.getInterface(), invoker.getUrl());
         exporter = new AbstractExporter<T>(invoker) {

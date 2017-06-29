@@ -1,20 +1,7 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.utils;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import javassist.CtClass;
 import javassist.CtConstructor;
 import javassist.CtMethod;
@@ -25,10 +12,11 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+//import java.util.*;
 
 /**
  * ReflectUtils
@@ -36,7 +24,7 @@ import java.util.regex.Pattern;
  * @author qian.lei
  */
 @SuppressWarnings("Duplicates")
-public final class ReflectUtils {
+abstract public class ReflectUtils {
 
     /**
      * void(V).
@@ -107,11 +95,11 @@ public final class ReflectUtils {
 
     public static final Pattern IS_HAS_CAN_METHOD_DESC_PATTERN = Pattern.compile("(?:is|has|can)([A-Z][_a-zA-Z0-9]*)\\(\\)Z");
 
-    private static final ConcurrentMap<String, Class<?>> DESC_CLASS_CACHE = new ConcurrentHashMap<String, Class<?>>();
+    private static final ConcurrentMap<String, Class<?>> DESC_CLASS_CACHE = Maps.newConcurrentMap();
 
-    private static final ConcurrentMap<String, Class<?>> NAME_CLASS_CACHE = new ConcurrentHashMap<String, Class<?>>();
+    private static final ConcurrentMap<String, Class<?>> NAME_CLASS_CACHE = Maps.newConcurrentMap();
 
-    private static final ConcurrentMap<String, Method> Signature_METHODS_CACHE = new ConcurrentHashMap<String, Method>();
+    private static final ConcurrentMap<String, Method> Signature_METHODS_CACHE = Maps.newConcurrentMap();
 
     public static boolean isPrimitives(Class<?> cls) {
         if (cls.isArray()) {
@@ -145,13 +133,6 @@ public final class ReflectUtils {
         return c;
     }
 
-    /**
-     * is compatible.
-     *
-     * @param c class.
-     * @param o instance.
-     * @return compatible or not.
-     */
     public static boolean isCompatible(Class<?> c, Object o) {
         boolean pt = c.isPrimitive();
         if (o == null)
@@ -163,13 +144,6 @@ public final class ReflectUtils {
         return c == o.getClass() || c.isInstance(o);
     }
 
-    /**
-     * is compatible.
-     *
-     * @param cs class array.
-     * @param os object array.
-     * @return compatible or not.
-     */
     public static boolean isCompatible(Class<?>[] cs, Object[] os) {
         int len = cs.length;
         if (len != os.length) return false;
@@ -194,13 +168,6 @@ public final class ReflectUtils {
         return location.getFile();
     }
 
-    /**
-     * get name.
-     * java.lang.Object[][].class => "java.lang.Object[][]"
-     *
-     * @param c class.
-     * @return name.
-     */
     public static String getName(Class<?> c) {
         if (c.isArray()) {
             StringBuilder sb = new StringBuilder();
@@ -262,7 +229,7 @@ public final class ReflectUtils {
     public static String getSignature(String methodName, Class<?>[] parameterTypes) {
         StringBuilder sb = new StringBuilder(methodName);
         sb.append("(");
-        if (parameterTypes != null && parameterTypes.length > 0) {
+        if (!CollectionUtils.isEmpty(parameterTypes)) {
             boolean first = true;
             for (Class<?> type : parameterTypes) {
                 if (first) {
@@ -303,7 +270,6 @@ public final class ReflectUtils {
      *
      * @param c class.
      * @return desc.
-     * @throws NotFoundException
      */
     public static String getDesc(Class<?> c) {
         StringBuilder ret = new StringBuilder();
@@ -338,7 +304,6 @@ public final class ReflectUtils {
      *
      * @param cs class array.
      * @return desc.
-     * @throws NotFoundException
      */
     public static String getDesc(final Class<?>[] cs) {
         if (cs.length == 0)
@@ -644,7 +609,7 @@ public final class ReflectUtils {
      *
      * @param desc desc.
      * @return Class instance.
-     * @throws ClassNotFoundException  no class exception
+     * @throws ClassNotFoundException no class exception
      */
     public static Class<?> desc2class(String desc) throws ClassNotFoundException {
         return desc2class(ClassHelper.getClassLoader(), desc);
@@ -717,13 +682,13 @@ public final class ReflectUtils {
      * @param cl   ClassLoader instance.
      * @param desc desc.
      * @return Class[] class array.
-     * @throws ClassNotFoundException  no class exception
+     * @throws ClassNotFoundException no class exception
      */
     private static Class<?>[] desc2classArray(ClassLoader cl, String desc) throws ClassNotFoundException {
         if (desc.length() == 0)
             return EMPTY_CLASS_ARRAY;
 
-        List<Class<?>> cs = new ArrayList<>();
+        List<Class<?>> cs = Lists.newArrayList();
         Matcher m = DESC_PATTERN.matcher(desc);
         while (m.find())
             cs.add(desc2class(cl, m.group()));
@@ -736,14 +701,14 @@ public final class ReflectUtils {
      * @param clazz      查找的类。
      * @param methodName 方法签名，形如method1(int, String)。也允许只给方法名不参数只有方法名，形如method2。
      * @return 返回查找到的方法。
-     * @throws NoSuchMethodException no method exception
+     * @throws NoSuchMethodException  no method exception
      * @throws ClassNotFoundException no class exception
      * @throws IllegalStateException  给定的方法签名找到多个方法（方法签名中没有指定参数，又有有重载的方法的情况）
      */
     public static Method findMethodByMethodSignature(Class<?> clazz, String methodName, String[] parameterTypes)
             throws NoSuchMethodException, ClassNotFoundException {
         String signature = methodName;
-        if (parameterTypes != null && parameterTypes.length > 0) {
+        if (!CollectionUtils.isEmpty(parameterTypes)) {
             signature = methodName + StringUtils.join(parameterTypes);
         }
         Method method = Signature_METHODS_CACHE.get(signature);
@@ -751,7 +716,7 @@ public final class ReflectUtils {
             return method;
         }
         if (parameterTypes == null) {
-            List<Method> finded = new ArrayList<>();
+            List<Method> finded = Lists.newArrayList();
             for (Method m : clazz.getMethods()) {
                 if (m.getName().equals(methodName)) {
                     finded.add(m);
@@ -947,7 +912,7 @@ public final class ReflectUtils {
     }
 
     public static Map<String, Field> getBeanPropertyFields(Class cl) {
-        Map<String, Field> properties = new HashMap<>();
+        Map<String, Field> properties = Maps.newHashMap();
         for (; cl != null; cl = cl.getSuperclass()) {
             Field[] fields = cl.getDeclaredFields();
             for (Field field : fields) {
@@ -966,7 +931,7 @@ public final class ReflectUtils {
     }
 
     public static Map<String, Method> getBeanPropertyReadMethods(Class cl) {
-        Map<String, Method> properties = new HashMap<>();
+        Map<String, Method> properties = Maps.newHashMap();
         for (; cl != null; cl = cl.getSuperclass()) {
             Method[] methods = cl.getDeclaredMethods();
             for (Method method : methods) {
@@ -979,8 +944,5 @@ public final class ReflectUtils {
         }
 
         return properties;
-    }
-
-    private ReflectUtils() {
     }
 }

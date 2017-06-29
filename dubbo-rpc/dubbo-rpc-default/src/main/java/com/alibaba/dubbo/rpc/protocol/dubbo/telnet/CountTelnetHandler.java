@@ -27,6 +27,8 @@ import com.alibaba.dubbo.rpc.Exporter;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcStatus;
 import com.alibaba.dubbo.rpc.protocol.dubbo.DubboProtocol;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -44,18 +46,17 @@ public class CountTelnetHandler implements TelnetHandler {
     @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
     public String telnet(final Channel channel, String message) {
         String service = (String) channel.getAttribute(ChangeTelnetHandler.SERVICE_KEY);
-        if ((service == null || service.length() == 0)
-                && (message == null || message.length() == 0)) {
+        if ((Strings.isNullOrEmpty(service)) && (Strings.isNullOrEmpty(message))) {
             return "Please input service name, eg: \r\ncount XxxService\r\ncount XxxService xxxMethod\r\ncount XxxService xxxMethod 10\r\nor \"cd XxxService\" firstly.";
         }
         StringBuilder buf = new StringBuilder();
-        if (service != null && service.length() > 0) {
+        if (!Strings.isNullOrEmpty(service)) {
             buf.append("Use default service " + service + ".\r\n");
         }
         String[] parts = message.split("\\s+");
         String method;
         String times;
-        if (service == null || service.length() == 0) {
+        if (Strings.isNullOrEmpty(service)) {
             service = parts.length > 0 ? parts[0] : null;
             method = parts.length > 1 ? parts[1] : null;
         } else {
@@ -73,10 +74,11 @@ public class CountTelnetHandler implements TelnetHandler {
         final int t = Integer.parseInt(times);
         Invoker<?> invoker = null;
         for (Exporter<?> exporter : DubboProtocol.getDubboProtocol().getExporters()) {
-            if (service.equals(exporter.getInvoker().getInterface().getSimpleName())
-                    || service.equals(exporter.getInvoker().getInterface().getName())
-                    || service.equals(exporter.getInvoker().getUrl().getPath())) {
-                invoker = exporter.getInvoker();
+            Invoker<?> invoker1 = exporter.getInvoker();
+            if (service.equals(invoker1.getInterface().getSimpleName())
+                    || service.equals(invoker1.getInterface().getName())
+                    || service.equals(invoker1.getUrl().getPath())) {
+                invoker = invoker1;
                 break;
             }
         }
@@ -116,15 +118,15 @@ public class CountTelnetHandler implements TelnetHandler {
 
     private String count(Invoker<?> invoker, String method) {
         URL url = invoker.getUrl();
-        List<List<String>> table = new ArrayList<>();
-        List<String> header = new ArrayList<>();
+        List<List<String>> table = Lists.newArrayList();
+        List<String> header = Lists.newArrayList();
         header.add("method");
         header.add("total");
         header.add("failed");
         header.add("active");
         header.add("average");
         header.add("max");
-        if (method == null || method.length() == 0) {
+        if (Strings.isNullOrEmpty(method)) {
             for (Method m : invoker.getInterface().getMethods()) {
                 RpcStatus count = RpcStatus.getStatus(url, m.getName());
                 List<String> row = new ArrayList<>();
@@ -146,7 +148,7 @@ public class CountTelnetHandler implements TelnetHandler {
             }
             if (found) {
                 RpcStatus count = RpcStatus.getStatus(url, method);
-                List<String> row = new ArrayList<>();
+                List<String> row = Lists.newArrayList();
                 row.add(method);
                 row.add(String.valueOf(count.getTotal()));
                 row.add(String.valueOf(count.getFailed()));

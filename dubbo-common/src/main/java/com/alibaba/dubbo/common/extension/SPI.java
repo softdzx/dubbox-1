@@ -46,7 +46,6 @@ yyy=com.foo.YyyProtocol
  *
  * @author william.liangf
  * @author ding.lid
- * @export
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
