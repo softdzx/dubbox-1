@@ -16,7 +16,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
- * 
  * @author william.liangf
  */
 public class ConsumerServiceImpl extends AbstractService implements ConsumerService {
