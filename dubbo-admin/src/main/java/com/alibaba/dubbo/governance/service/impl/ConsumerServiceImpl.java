@@ -1,18 +1,3 @@
-/**
- * Project: dubbo.registry-1.1.0-SNAPSHOT
- * 
- * File Created at 2010-4-15
- * $Id: ConsumerServiceImpl.java 184666 2012-07-05 11:13:17Z tony.chenl $
- * 
- * Copyright 2008 Alibaba.com Croporation Limited.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.governance.service.impl;
 
 import java.util.ArrayList;
@@ -27,6 +12,8 @@ import com.alibaba.dubbo.governance.service.ConsumerService;
 import com.alibaba.dubbo.governance.sync.util.Pair;
 import com.alibaba.dubbo.governance.sync.util.SyncUtils;
 import com.alibaba.dubbo.registry.common.domain.Consumer;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * 
@@ -51,13 +38,13 @@ public class ConsumerServiceImpl extends AbstractService implements ConsumerServ
     }
     
     private Map<Long, URL> findAllConsumerUrl() {
-        Map<String, String> filter = new HashMap<String, String>();
+        Map<String, String> filter = Maps.newHashMap();
         filter.put(Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY);
         return SyncUtils.filterFromCategory(getRegistryCache(), filter);
     }
 
     public List<String> findAddresses() {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = Lists.newArrayList();
         ConcurrentMap<String, Map<Long, URL>> consumerUrls = getRegistryCache().get(Constants.CONSUMERS_CATEGORY);
         if(null == consumerUrls) return ret;
         
