@@ -1,23 +1,12 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config.spring;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.config.*;
 import com.alibaba.dubbo.config.annotation.DubboService;
 import com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -30,7 +19,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +26,6 @@ import java.util.Map;
  * ServiceFactoryBean
  *
  * @author william.liangf
- * @export
  */
 @SuppressWarnings("Duplicates")
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener, BeanNameAware {
@@ -97,9 +84,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     public void onApplicationEvent(ApplicationEvent event) {
         if (ContextRefreshedEvent.class.getName().equals(event.getClass().getName())) {
             if (isDelay() && !isExported() && !isUnexported()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("The service ready on spring started. service: " + getInterface());
-                }
+                LogHelper.info(logger, "The service ready on spring started. service: " + getInterface());
                 export();
             }
         }
@@ -117,12 +102,14 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @SuppressWarnings({"unchecked", "deprecation"})
     public void afterPropertiesSet() throws Exception {
         if (getProvider() == null) {
-            Map<String, ProviderConfig> providerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, false, false);
-            if (providerConfigMap != null && providerConfigMap.size() > 0) {
-                Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
-                if ((protocolConfigMap == null || protocolConfigMap.size() == 0)
+            Map<String, ProviderConfig> providerConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(providerConfigMap)) {
+                Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null :
+                        BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
+                if (CollectionUtils.isEmpty(protocolConfigMap)
                         && providerConfigMap.size() > 1) { // 兼容旧版本
-                    List<ProviderConfig> providerConfigs = new ArrayList<>();
+                    List<ProviderConfig> providerConfigs = Lists.newArrayList();
                     for (ProviderConfig config : providerConfigMap.values()) {
                         if (config.isDefault() != null && config.isDefault()) {
                             providerConfigs.add(config);
@@ -149,8 +136,9 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         }
         if (getApplication() == null
                 && (getProvider() == null || getProvider().getApplication() == null)) {
-            Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
-            if (applicationConfigMap != null && applicationConfigMap.size() > 0) {
+            Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(applicationConfigMap)) {
                 ApplicationConfig applicationConfig = null;
                 for (ApplicationConfig config : applicationConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -167,8 +155,9 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         }
         if (getModule() == null
                 && (getProvider() == null || getProvider().getModule() == null)) {
-            Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
-            if (moduleConfigMap != null && moduleConfigMap.size() > 0) {
+            Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(moduleConfigMap)) {
                 ModuleConfig moduleConfig = null;
                 for (ModuleConfig config : moduleConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -183,12 +172,13 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
-        if ((getRegistries() == null || getRegistries().size() == 0)
-                && (getProvider() == null || getProvider().getRegistries() == null || getProvider().getRegistries().size() == 0)
-                && (getApplication() == null || getApplication().getRegistries() == null || getApplication().getRegistries().size() == 0)) {
-            Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
-            if (registryConfigMap != null && registryConfigMap.size() > 0) {
-                List<RegistryConfig> registryConfigs = new ArrayList<>();
+        if (CollectionUtils.isEmpty(getRegistries())
+                && (getProvider() == null || CollectionUtils.isEmpty(getProvider().getRegistries()))
+                && (getApplication() == null || CollectionUtils.isEmpty(getApplication().getRegistries()))) {
+            Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(registryConfigMap)) {
+                List<RegistryConfig> registryConfigs = Lists.newArrayList();
                 for (RegistryConfig config : registryConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
                         registryConfigs.add(config);
@@ -202,8 +192,9 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         if (getMonitor() == null
                 && (getProvider() == null || getProvider().getMonitor() == null)
                 && (getApplication() == null || getApplication().getMonitor() == null)) {
-            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
-            if (monitorConfigMap != null && monitorConfigMap.size() > 0) {
+            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(monitorConfigMap)) {
                 MonitorConfig monitorConfig = null;
                 for (MonitorConfig config : monitorConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -218,11 +209,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
-        if ((getProtocols() == null || getProtocols().size() == 0)
-                && (getProvider() == null || getProvider().getProtocols() == null || getProvider().getProtocols().size() == 0)) {
-            Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
-            if (protocolConfigMap != null && protocolConfigMap.size() > 0) {
-                List<ProtocolConfig> protocolConfigs = new ArrayList<>();
+        if (CollectionUtils.isEmpty(getProtocols()) &&
+                (getProvider() == null || CollectionUtils.isEmpty(getProvider().getProtocols()))) {
+            Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(protocolConfigMap)) {
+                List<ProtocolConfig> protocolConfigs = Lists.newArrayList();
                 for (ProtocolConfig config : protocolConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
                         protocolConfigs.add(config);
@@ -233,9 +225,8 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
-        if (getPath() == null || getPath().length() == 0) {
-            if (beanName != null && beanName.length() > 0
-                    && getInterface() != null && getInterface().length() > 0
+        if (Strings.isNullOrEmpty(getPath())) {
+            if (!Strings.isNullOrEmpty(beanName) && !Strings.isNullOrEmpty(getInterface())
                     && beanName.startsWith(getInterface())) {
                 setPath(beanName);
             }

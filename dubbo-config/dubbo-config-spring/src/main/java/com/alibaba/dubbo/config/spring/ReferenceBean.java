@@ -1,24 +1,11 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config.spring;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.config.*;
+import com.alibaba.dubbo.config.annotation.DubboConsumer;
+import com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory;
+import com.alibaba.dubbo.config.support.Parameter;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -26,29 +13,21 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import com.alibaba.dubbo.config.ApplicationConfig;
-import com.alibaba.dubbo.config.ConsumerConfig;
-import com.alibaba.dubbo.config.ModuleConfig;
-import com.alibaba.dubbo.config.MonitorConfig;
-import com.alibaba.dubbo.config.ReferenceConfig;
-import com.alibaba.dubbo.config.RegistryConfig;
-import com.alibaba.dubbo.config.annotation.DubboConsumer;
-import com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory;
-import com.alibaba.dubbo.config.support.Parameter;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ReferenceFactoryBean
- * 
+ *
  * @author william.liangf
- * @export
  */
 public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean, ApplicationContextAware, InitializingBean, DisposableBean {
 
-	private static final long serialVersionUID = 213195494150089726L;
-	
-	private transient ApplicationContext applicationContext;
+    private static final long serialVersionUID = 213195494150089726L;
 
-	public ReferenceBean() {
+    private transient ApplicationContext applicationContext;
+
+    public ReferenceBean() {
         super();
     }
 
@@ -57,10 +36,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {
-		this.applicationContext = applicationContext;
-		SpringExtensionFactory.addApplicationContext(applicationContext);
-	}
-    
+        this.applicationContext = applicationContext;
+        SpringExtensionFactory.addApplicationContext(applicationContext);
+    }
+
     public Object getObject() throws Exception {
         return get();
     }
@@ -74,11 +53,13 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         return true;
     }
 
-    @SuppressWarnings({ "unchecked"})
+    @SuppressWarnings({"unchecked"})
     public void afterPropertiesSet() throws Exception {
-        if (getConsumer() == null) {
-            Map<String, ConsumerConfig> consumerConfigMap = applicationContext == null ? null  : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConsumerConfig.class, false, false);
-            if (consumerConfigMap != null && consumerConfigMap.size() > 0) {
+        ConsumerConfig consumer = getConsumer();
+        if (consumer == null) {
+            Map<String, ConsumerConfig> consumerConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConsumerConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(consumerConfigMap)) {
                 ConsumerConfig consumerConfig = null;
                 for (ConsumerConfig config : consumerConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -94,9 +75,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
         if (getApplication() == null
-                && (getConsumer() == null || getConsumer().getApplication() == null)) {
-            Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
-            if (applicationConfigMap != null && applicationConfigMap.size() > 0) {
+                && (consumer == null || consumer.getApplication() == null)) {
+            Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(applicationConfigMap)) {
                 ApplicationConfig applicationConfig = null;
                 for (ApplicationConfig config : applicationConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -112,9 +94,10 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
         if (getModule() == null
-                && (getConsumer() == null || getConsumer().getModule() == null)) {
-            Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
-            if (moduleConfigMap != null && moduleConfigMap.size() > 0) {
+                && (consumer == null || consumer.getModule() == null)) {
+            Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(moduleConfigMap)) {
                 ModuleConfig moduleConfig = null;
                 for (ModuleConfig config : moduleConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -129,12 +112,13 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
-        if ((getRegistries() == null || getRegistries().size() == 0)
-                && (getConsumer() == null || getConsumer().getRegistries() == null || getConsumer().getRegistries().size() == 0)
-                && (getApplication() == null || getApplication().getRegistries() == null || getApplication().getRegistries().size() == 0)) {
-            Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
-            if (registryConfigMap != null && registryConfigMap.size() > 0) {
-                List<RegistryConfig> registryConfigs = new ArrayList<>();
+        if (CollectionUtils.isEmpty(getRegistries())
+                && (consumer == null || CollectionUtils.isEmpty(consumer.getRegistries()))
+                && (getApplication() == null || CollectionUtils.isEmpty(getApplication().getRegistries()))) {
+            Map<String, RegistryConfig> registryConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, RegistryConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(registryConfigMap)) {
+                List<RegistryConfig> registryConfigs = Lists.newArrayList();
                 for (RegistryConfig config : registryConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
                         registryConfigs.add(config);
@@ -146,10 +130,11 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
         if (getMonitor() == null
-                && (getConsumer() == null || getConsumer().getMonitor() == null)
+                && (consumer == null || consumer.getMonitor() == null)
                 && (getApplication() == null || getApplication().getMonitor() == null)) {
-            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
-            if (monitorConfigMap != null && monitorConfigMap.size() > 0) {
+            Map<String, MonitorConfig> monitorConfigMap = applicationContext == null ? null :
+                    BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MonitorConfig.class, false, false);
+            if (!CollectionUtils.isEmpty(monitorConfigMap)) {
                 MonitorConfig monitorConfig = null;
                 for (MonitorConfig config : monitorConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
@@ -165,8 +150,8 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
         Boolean b = isInit();
-        if (b == null && getConsumer() != null) {
-            b = getConsumer().isInit();
+        if (b == null && consumer != null) {
+            b = consumer.isInit();
         }
         if (b != null && b) {
             getObject();
