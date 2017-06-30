@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config;
 
 import com.alibaba.dubbo.common.Constants;
@@ -30,7 +15,6 @@ import java.util.Arrays;
  * ProviderConfig
  *
  * @author william.liangf
- * @export
  * @see com.alibaba.dubbo.config.ProtocolConfig
  * @see com.alibaba.dubbo.config.ServiceConfig
  */
@@ -162,7 +146,7 @@ public class ProviderConfig extends AbstractServiceConfig {
 
     @Deprecated
     public void setProtocol(String protocol) {
-        this.protocols = Arrays.asList(new ProtocolConfig[]{new ProtocolConfig(protocol)});
+        this.protocols = Arrays.asList(new ProtocolConfig(protocol));
     }
 
     @Parameter(excluded = true)
@@ -397,21 +381,21 @@ public class ProviderConfig extends AbstractServiceConfig {
      *
      * @deprecated {@link #getDispatcher()}
      */
-    @Deprecated
-    @Parameter(excluded = true)
-    public String getDispather() {
-        return getDispatcher();
-    }
+//    @Deprecated
+//    @Parameter(excluded = true)
+//    public String getDispather() {
+//        return getDispatcher();
+//    }
 
     /**
      * 单词拼写错误，请使用{@link #setDispatcher(String)}
      *
      * @deprecated {@link #setDispatcher(String)}
      */
-    @Deprecated
-    public void setDispather(String dispather) {
-        setDispatcher(dispather);
-    }
+//    @Deprecated
+//    public void setDispather(String dispather) {
+//        setDispatcher(dispather);
+//    }
 
     public String getDispatcher() {
         return dispatcher;

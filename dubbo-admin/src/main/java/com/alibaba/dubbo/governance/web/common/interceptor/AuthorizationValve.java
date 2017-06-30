@@ -20,6 +20,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.alibaba.citrus.service.pipeline.PipelineContext;
@@ -95,7 +96,7 @@ public class AuthorizationValve extends AbstractValve {
                 showLoginForm();
                 pipelineContext.breakPipeline(1);
             }
-            if (user != null && StringUtils.isNotEmpty(user.getUsername())) {
+            if (user != null && !Strings.isNullOrEmpty(user.getUsername())) {
                 request.getSession().setAttribute(WebConstants.CURRENT_USER_KEY, user);
                 pipelineContext.invokeNext();
             }

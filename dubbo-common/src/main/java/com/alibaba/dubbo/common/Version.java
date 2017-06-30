@@ -1,29 +1,16 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common;
-
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.ClassHelper;
+import com.alibaba.dubbo.common.utils.LogHelper;
+import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
+
+import java.net.URL;
+import java.security.CodeSource;
+import java.util.Enumeration;
+import java.util.Set;
 
 /**
  * Version
@@ -52,17 +39,17 @@ public final class Version {
         try {
             // 首先查找MANIFEST.MF规范中的版本号
             String version = cls.getPackage().getImplementationVersion();
-            if (version == null || version.length() == 0) {
+            if (Strings.isNullOrEmpty(version)) {
                 version = cls.getPackage().getSpecificationVersion();
             }
-            if (version == null || version.length() == 0) {
+            if (Strings.isNullOrEmpty(version)) {
                 // 如果规范中没有版本号，基于jar包名获取版本号
                 CodeSource codeSource = cls.getProtectionDomain().getCodeSource();
                 if (codeSource == null) {
                     logger.info("No codeSource for class " + cls.getName() + " when getVersion, use default version " + defaultVersion);
                 } else {
                     String file = codeSource.getLocation().getFile();
-                    if (file != null && file.length() > 0 && file.endsWith(".jar")) {
+                    if (!Strings.isNullOrEmpty(file) && file.endsWith(".jar")) {
                         file = file.substring(0, file.length() - 4);
                         int i = file.lastIndexOf('/');
                         if (i >= 0) {
@@ -85,10 +72,10 @@ public final class Version {
                 }
             }
             // 返回版本号，如果为空返回缺省版本号
-            return version == null || version.length() == 0 ? defaultVersion : version;
+            return Strings.isNullOrEmpty(version) ? defaultVersion : version;
         } catch (Throwable e) { // 防御性容错
             // 忽略异常，返回缺省版本号
-            logger.error("return default version, ignore exception " + e.getMessage(), e);
+            LogHelper.error(logger, "return default version, ignore exception " + e.getMessage(), e);
             return defaultVersion;
         }
     }
@@ -105,12 +92,12 @@ public final class Version {
         try {
             // 在ClassPath搜文件
             Enumeration<URL> urls = ClassHelper.getCallerClassLoader(Version.class).getResources(path);
-            Set<String> files = new HashSet<String>();
+            Set<String> files = Sets.newHashSet();
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
                 if (url != null) {
                     String file = url.getFile();
-                    if (file != null && file.length() > 0) {
+                    if (!Strings.isNullOrEmpty(file)) {
                         files.add(file);
                     }
                 }
@@ -121,11 +108,11 @@ public final class Version {
                 if (failOnError) {
                     throw new IllegalStateException(error);
                 } else {
-                    logger.error(error);
+                    LogHelper.error(logger, error);
                 }
             }
         } catch (Throwable e) { // 防御性容错
-            logger.error(e.getMessage(), e);
+            LogHelper.error(logger, e.getMessage(), e);
         }
     }
 

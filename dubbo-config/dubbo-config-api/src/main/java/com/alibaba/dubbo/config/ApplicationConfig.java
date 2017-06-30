@@ -18,9 +18,11 @@ package com.alibaba.dubbo.config;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.compiler.support.AdaptiveCompiler;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.config.support.Parameter;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -31,6 +33,7 @@ import java.util.List;
  * @export
  */
 public class ApplicationConfig extends AbstractConfig {
+
     private static final long serialVersionUID = 5508512956753757169L;
     /**
      * 应用名称
@@ -102,7 +105,7 @@ public class ApplicationConfig extends AbstractConfig {
     public void setName(String name) {
         checkName("name", name);
         this.name = name;
-        if (id == null || id.length() == 0) {
+        if (Strings.isNullOrEmpty(id)) {
             id = name;
         }
     }
@@ -158,11 +161,11 @@ public class ApplicationConfig extends AbstractConfig {
     }
 
     public RegistryConfig getRegistry() {
-        return registries == null || registries.size() == 0 ? null : registries.get(0);
+        return CollectionUtils.isEmpty(registries) ? null : registries.get(0);
     }
 
     public void setRegistry(RegistryConfig registry) {
-        List<RegistryConfig> registries = new ArrayList<>(1);
+        List<RegistryConfig> registries = Lists.newArrayListWithCapacity(1);
         registries.add(registry);
         this.registries = registries;
     }

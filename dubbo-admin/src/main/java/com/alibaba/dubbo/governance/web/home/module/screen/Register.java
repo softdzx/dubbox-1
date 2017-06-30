@@ -1,10 +1,3 @@
-/*
- * Copyright 2011 Alibaba.com All right reserved. This software is the
- * confidential and proprietary information of Alibaba.com ("Confidential
- * Information"). You shall not disclose such Confidential Information and shall
- * use it only in accordance with the terms of the license agreement you entered
- * into with Alibaba.com.
- */
 package com.alibaba.dubbo.governance.web.home.module.screen;
 
 import java.util.Arrays;
@@ -13,6 +6,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.alibaba.dubbo.common.utils.CollectionUtils;
@@ -53,7 +47,7 @@ public class Register extends Shell {
             	for(Map.Entry<String, String> e : url2query.entrySet()) {
             	   Map<String, String> query = StringUtils.parseQueryString(e.getValue()); 
             	   String app = query.get("application");
-            	   if(StringUtils.isEmpty(app)) {
+            	   if(Strings.isNullOrEmpty(app)) {
             	       throw new IllegalStateException("No application for service(" + serviceName + "): "
             	               + e.getKey() + "?" + e.getValue());
             	   }

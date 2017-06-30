@@ -1,30 +1,16 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.config.support.Parameter;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * ModuleConfig
  *
  * @author william.liangf
- * @export
  */
 public class ModuleConfig extends AbstractConfig {
 
@@ -80,7 +66,7 @@ public class ModuleConfig extends AbstractConfig {
     public void setName(String name) {
         checkName("name", name);
         this.name = name;
-        if (id == null || id.length() == 0) {
+        if (Strings.isNullOrEmpty(id)) {
             id = name;
         }
     }
@@ -113,11 +99,11 @@ public class ModuleConfig extends AbstractConfig {
     }
 
     public RegistryConfig getRegistry() {
-        return registries == null || registries.size() == 0 ? null : registries.get(0);
+        return CollectionUtils.isEmpty(registries) ? null : registries.get(0);
     }
 
     public void setRegistry(RegistryConfig registry) {
-        List<RegistryConfig> registries = new ArrayList<RegistryConfig>(1);
+        List<RegistryConfig> registries = Lists.newArrayListWithCapacity(1);
         registries.add(registry);
         this.registries = registries;
     }

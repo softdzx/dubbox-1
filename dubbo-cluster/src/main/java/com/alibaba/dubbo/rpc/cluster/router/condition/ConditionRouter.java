@@ -15,45 +15,43 @@
  */
 package com.alibaba.dubbo.rpc.cluster.router.condition;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.common.utils.NetUtils;
-import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.common.utils.UrlUtils;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.alibaba.dubbo.rpc.cluster.Router;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import java.text.ParseException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * ConditionRouter
- * 
+ *
  * @author william.liangf
  */
 public class ConditionRouter implements Router, Comparable<Router> {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ConditionRouter.class);
 
     private final URL url;
-    
+
     private final int priority;
 
     private final boolean force;
 
     private final Map<String, MatchPair> whenCondition;
-    
+
     private final Map<String, MatchPair> thenCondition;
 
     public ConditionRouter(URL url) {
@@ -69,8 +67,8 @@ public class ConditionRouter implements Router, Comparable<Router> {
             int i = rule.indexOf("=>");
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();
-            Map<String, MatchPair> when = StringUtils.isBlank(whenRule) || "true".equals(whenRule) ? new HashMap<String, MatchPair>() : parseRule(whenRule);
-            Map<String, MatchPair> then = StringUtils.isBlank(thenRule) || "false".equals(thenRule) ? null : parseRule(thenRule);
+            Map<String, MatchPair> when = Strings.isNullOrEmpty(whenRule) || "true".equals(whenRule) ? Maps.newHashMap() : parseRule(whenRule);
+            Map<String, MatchPair> then = Strings.isNullOrEmpty(thenRule) || "false".equals(thenRule) ? null : parseRule(thenRule);
             // NOTE: When条件是允许为空的，外部业务来保证类似的约束条件
             this.whenCondition = when;
             this.thenCondition = then;
@@ -81,16 +79,16 @@ public class ConditionRouter implements Router, Comparable<Router> {
 
     public <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation)
             throws RpcException {
-        if (invokers == null || invokers.size() == 0) {
+        if (CollectionUtils.isEmpty(invokers)) {
             return invokers;
         }
         try {
-            if (! matchWhen(url)) {
+            if (!matchWhen(url)) {
                 return invokers;
             }
-            List<Invoker<T>> result = new ArrayList<Invoker<T>>();
+            List<Invoker<T>> result = Lists.newArrayList();
             if (thenCondition == null) {
-            	logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
+                logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
                 return result;
             }
             for (Invoker<T> invoker : invokers) {
@@ -101,8 +99,8 @@ public class ConditionRouter implements Router, Comparable<Router> {
             if (result.size() > 0) {
                 return result;
             } else if (force) {
-            	logger.warn("The route result is empty and force execute. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey() + ", router: " + url.getParameterAndDecoded(Constants.RULE_KEY));
-            	return result;
+                logger.warn("The route result is empty and force execute. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey() + ", router: " + url.getParameterAndDecoded(Constants.RULE_KEY));
+                return result;
             }
         } catch (Throwable t) {
             logger.error("Failed to execute condition router rule: " + getUrl() + ", invokers: " + invokers + ", cause: " + t.getMessage(), t);
@@ -129,27 +127,27 @@ public class ConditionRouter implements Router, Comparable<Router> {
     public boolean matchThen(URL url, URL param) {
         return thenCondition != null && matchCondition(thenCondition, url, param);
     }
-    
+
     private boolean matchCondition(Map<String, MatchPair> condition, URL url, URL param) {
         Map<String, String> sample = url.toMap();
         for (Map.Entry<String, String> entry : sample.entrySet()) {
             String key = entry.getKey();
             MatchPair pair = condition.get(key);
-            if (pair != null && ! pair.isMatch(entry.getValue(), param)) {
+            if (pair != null && !pair.isMatch(entry.getValue(), param)) {
                 return false;
             }
         }
         return true;
     }
-    
+
     private static Pattern ROUTE_PATTERN = Pattern.compile("([&!=,]*)\\s*([^&!=,\\s]+)");
-    
+
     private static Map<String, MatchPair> parseRule(String rule)
             throws ParseException {
-        Map<String, MatchPair> condition = new HashMap<String, MatchPair>();
-        if(StringUtils.isBlank(rule)) {
+        Map<String, MatchPair> condition = Maps.newHashMap();
+        if (Strings.isNullOrEmpty(rule)) {
             return condition;
-        }        
+        }
         // 匹配或不匹配Key-Value对
         MatchPair pair = null;
         // 多个Value值
@@ -214,9 +212,10 @@ public class ConditionRouter implements Router, Comparable<Router> {
     private static final class MatchPair {
         final Set<String> matches = new HashSet<String>();
         final Set<String> mismatches = new HashSet<String>();
+
         public boolean isMatch(String value, URL param) {
             for (String match : matches) {
-                if (! UrlUtils.isMatchGlobPattern(match, value, param)) {
+                if (!UrlUtils.isMatchGlobPattern(match, value, param)) {
                     return false;
                 }
             }

@@ -33,6 +33,7 @@ import com.alibaba.dubbo.rpc.ProxyFactory;
 import com.alibaba.dubbo.rpc.cluster.ConfiguratorFactory;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.ProtocolUtils;
+import com.google.common.base.Strings;
 
 import java.lang.reflect.Method;
 import java.net.*;
@@ -192,7 +193,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
         if (ref instanceof GenericService) {
             interfaceClass = GenericService.class;
-            if (StringUtils.isEmpty(generic)) {
+            if (Strings.isNullOrEmpty(generic)) {
                 generic = Boolean.TRUE.toString();
             }
         } else {
@@ -543,7 +544,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             setProtocol(new ProtocolConfig());
         }
         for (ProtocolConfig protocolConfig : protocols) {
-            if (StringUtils.isEmpty(protocolConfig.getName())) {
+            if (Strings.isNullOrEmpty(protocolConfig.getName())) {
                 protocolConfig.setName("dubbo");
             }
             appendProperties(protocolConfig);
@@ -628,7 +629,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public void setGeneric(String generic) {
-        if (StringUtils.isEmpty(generic)) {
+        if (Strings.isNullOrEmpty(generic)) {
             return;
         }
         if (ProtocolUtils.isGeneric(generic)) {

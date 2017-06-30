@@ -17,6 +17,7 @@ package com.alibaba.dubbo.config.utils;
 
 import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.config.ReferenceConfig;
+import com.google.common.base.Strings;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -79,20 +80,20 @@ public class ReferenceConfigCache {
     public static final KeyGenerator DEFAULT_KEY_GENERATOR = new KeyGenerator() {
         public String generateKey(ReferenceConfig<?> referenceConfig) {
             String iName = referenceConfig.getInterface();
-            if (StringUtils.isEmpty(iName)) {
+            if (Strings.isNullOrEmpty(iName)) {
                 Class<?> clazz = referenceConfig.getInterfaceClass();
                 iName = clazz.getName();
             }
-            if (StringUtils.isEmpty(iName)) {
+            if (Strings.isNullOrEmpty(iName)) {
                 throw new IllegalArgumentException("No interface info in ReferenceConfig" + referenceConfig);
             }
 
             StringBuilder ret = new StringBuilder();
-            if (!StringUtils.isEmpty(referenceConfig.getGroup())) {
+            if (!Strings.isNullOrEmpty(referenceConfig.getGroup())) {
                 ret.append(referenceConfig.getGroup()).append("/");
             }
             ret.append(iName);
-            if (!StringUtils.isEmpty(referenceConfig.getVersion())) {
+            if (!Strings.isNullOrEmpty(referenceConfig.getVersion())) {
                 ret.append(":").append(referenceConfig.getVersion());
             }
             return ret.toString();
