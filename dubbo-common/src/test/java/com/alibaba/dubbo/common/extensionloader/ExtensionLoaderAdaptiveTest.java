@@ -40,7 +40,7 @@ import static org.junit.matchers.JUnitMatchers.containsString;
 /**
  * @author ding.lid
  */
-public class ExtensionLoader_Adaptive_Test {
+public class ExtensionLoaderAdaptiveTest {
 
     @Test
     public void test_useAdaptiveClass() throws Exception {

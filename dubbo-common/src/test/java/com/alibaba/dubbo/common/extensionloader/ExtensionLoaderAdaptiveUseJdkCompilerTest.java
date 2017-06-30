@@ -22,7 +22,7 @@ import org.junit.BeforeClass;
 /**
  * @author ding.lid
  */
-public class ExtensionLoader_Adaptive_UseJdkCompiler_Test extends ExtensionLoader_Adaptive_Test {
+public class ExtensionLoaderAdaptiveUseJdkCompilerTest extends ExtensionLoaderAdaptiveTest {
     @BeforeClass
     public static void setUp() throws Exception {
         AdaptiveCompiler.setDefaultCompiler("jdk");

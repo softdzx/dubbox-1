@@ -1,61 +1,42 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.bytecode;
+
+import com.alibaba.dubbo.common.utils.ClassHelper;
+import com.alibaba.dubbo.common.utils.ReflectUtils;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.alibaba.dubbo.common.utils.ClassHelper;
-import com.alibaba.dubbo.common.utils.ReflectUtils;
-
 /**
  * Proxy.
  *
  * @author qian.lei
  */
-
 public abstract class Proxy {
+
     private static final AtomicLong PROXY_CLASS_COUNTER = new AtomicLong(0);
 
     private static final String PACKAGE_NAME = Proxy.class.getPackage().getName();
 
-    public static final InvocationHandler RETURN_NULL_INVOKER = new InvocationHandler() {
-        public Object invoke(Object proxy, Method method, Object[] args) {
-            return null;
-        }
+    public static final InvocationHandler RETURN_NULL_INVOKER = (proxy, method, args) -> {
+        return null;
     };
 
-    public static final InvocationHandler THROW_UNSUPPORTED_INVOKER = new InvocationHandler() {
-        public Object invoke(Object proxy, Method method, Object[] args) {
-            throw new UnsupportedOperationException("Method [" + ReflectUtils.getName(method) + "] unimplemented.");
-        }
+    public static final InvocationHandler THROW_UNSUPPORTED_INVOKER = (proxy, method, args) -> {
+        throw new UnsupportedOperationException("Method [" + ReflectUtils.getName(method) + "] unimplemented.");
     };
 
-    private static final Map<ClassLoader, Map<String, Object>> ProxyCacheMap = new WeakHashMap<ClassLoader, Map<String, Object>>();
+    private static final Map<ClassLoader, Map<String, Object>> ProxyCacheMap = new WeakHashMap<>();
 
     private static final Object PendingGenerationMarker = new Object();
 
@@ -82,20 +63,20 @@ public abstract class Proxy {
 
         ClassLoader rpcInterfaceClassLoader = ics[0].getClassLoader();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ics.length; i++) {
-            String itf = ics[i].getName();
-            if (!ics[i].isInterface())
+        for (Class<?> clazz : ics) {
+            String itf = clazz.getName();
+            if (!clazz.isInterface())
                 throw new RuntimeException(itf + " is not a interface.");
 
             Class<?> tmp = null;
             try {
                 tmp = Class.forName(itf, false, rpcInterfaceClassLoader);
             } catch (ClassNotFoundException e) {
-
+                e.printStackTrace();
             }
 
-            if (tmp != ics[i])
-                throw new IllegalArgumentException(ics[i] + " is not visible from class loader");
+            if (tmp != clazz)
+                throw new IllegalArgumentException(clazz + " is not visible from class loader");
 
             sb.append(itf).append(';');
         }
@@ -106,11 +87,12 @@ public abstract class Proxy {
         // get cache by class loader.
         Map<String, Object> cache;
         synchronized (ProxyCacheMap) {
-            cache = ProxyCacheMap.get(rpcInterfaceClassLoader);
-            if (cache == null) {
-                cache = new HashMap<String, Object>();
-                ProxyCacheMap.put(rpcInterfaceClassLoader, cache);
-            }
+            cache = ProxyCacheMap.computeIfAbsent(rpcInterfaceClassLoader, k -> Maps.newHashMap());
+//            cache = ProxyCacheMap.get(rpcInterfaceClassLoader);
+//            if (cache == null) {
+//                cache = new HashMap<String, Object>();
+//                ProxyCacheMap.put(rpcInterfaceClassLoader, cache);
+//            }
         }
 
         Proxy proxy = null;
@@ -127,13 +109,13 @@ public abstract class Proxy {
                     try {
                         cache.wait();
                     } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 } else {
                     cache.put(key, PendingGenerationMarker);
                     break;
                 }
-            }
-            while (true);
+            } while (true);
         }
 
         long id = PROXY_CLASS_COUNTER.getAndIncrement();
@@ -142,12 +124,12 @@ public abstract class Proxy {
         try {
             ccp = ClassGenerator.newInstance(rpcInterfaceClassLoader);
 
-            Set<String> worked = new HashSet<String>();
-            List<Method> methods = new ArrayList<Method>();
+            Set<String> worked = Sets.newHashSet();
+            List<Method> methods = Lists.newArrayList();
 
-            for (int i = 0; i < ics.length; i++) {
-                if (!Modifier.isPublic(ics[i].getModifiers())) {
-                    String npkg = ics[i].getPackage().getName();
+            for (Class<?> clazz : ics) {
+                if (!Modifier.isPublic(clazz.getModifiers())) {
+                    String npkg = clazz.getPackage().getName();
                     if (pkg == null) {
                         pkg = npkg;
                     } else {
@@ -155,9 +137,9 @@ public abstract class Proxy {
                             throw new IllegalArgumentException("non-public interfaces from different packages");
                     }
                 }
-                ccp.addInterface(ics[i]);
+                ccp.addInterface(clazz);
 
-                for (Method method : ics[i].getMethods()) {
+                for (Method method : clazz.getMethods()) {
                     String desc = ReflectUtils.getDesc(method);
                     if (worked.contains(desc))
                         continue;
@@ -216,7 +198,7 @@ public abstract class Proxy {
                 if (proxy == null)
                     cache.remove(key);
                 else
-                    cache.put(key, new WeakReference<Proxy>(proxy));
+                    cache.put(key, new WeakReference<>(proxy));
                 cache.notifyAll();
             }
         }

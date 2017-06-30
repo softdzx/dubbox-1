@@ -24,6 +24,7 @@ import com.alibaba.dubbo.common.utils.PojoUtils;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.rpc.*;
+import com.google.common.base.Strings;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
@@ -51,11 +52,11 @@ final public class MockInvoker<T> implements Invoker<T> {
         if (invocation instanceof RpcInvocation) {
             ((RpcInvocation) invocation).setInvoker(this);
         }
-        if (StringUtils.isEmpty(mock)) {
+        if (Strings.isNullOrEmpty(mock)) {
             mock = getUrl().getParameter(Constants.MOCK_KEY);
         }
 
-        if (StringUtils.isEmpty(mock)) {
+        if (Strings.isNullOrEmpty(mock)) {
             throw new RpcException(new IllegalAccessException("mock can not be null. url :" + url));
         }
         mock = normallizeMock(URL.decode(mock));
@@ -76,7 +77,7 @@ final public class MockInvoker<T> implements Invoker<T> {
         } else if (mock.startsWith(Constants.THROW_PREFIX)) {
             mock = mock.substring(Constants.THROW_PREFIX.length()).trim();
             mock = mock.replace('`', '"');
-            if (StringUtils.isEmpty(mock)) {
+            if (Strings.isNullOrEmpty(mock)) {
                 throw new RpcException(" mocked exception for Service degradation. ");
             } else { //用户自定义类
                 Throwable t = getThrowable(mock);

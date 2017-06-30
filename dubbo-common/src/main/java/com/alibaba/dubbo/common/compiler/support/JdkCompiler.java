@@ -1,54 +1,18 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.compiler.support;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.alibaba.dubbo.common.utils.ClassHelper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import javax.tools.*;
+import javax.tools.JavaFileObject.Kind;
+import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.tools.DiagnosticCollector;
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
-
-import com.alibaba.dubbo.common.utils.ClassHelper;
+import java.util.*;
 
 /**
  * JdkCompiler. (SPI, Singleton, ThreadSafe)
@@ -59,7 +23,7 @@ public class JdkCompiler extends AbstractCompiler {
 
     private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-    private final DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
+    private final DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
 
     private final ClassLoaderImpl classLoader;
 
@@ -68,7 +32,7 @@ public class JdkCompiler extends AbstractCompiler {
     private volatile List<String> options;
 
     public JdkCompiler() {
-        options = new ArrayList<>();
+        options = Lists.newArrayList();
         options.add("-target");
         options.add("1.8");
         StandardJavaFileManager manager = compiler.getStandardFileManager(diagnosticCollector, null, null);
@@ -77,7 +41,7 @@ public class JdkCompiler extends AbstractCompiler {
                 && (!loader.getClass().getName().equals("sun.misc.Launcher$AppClassLoader"))) {
             try {
                 URLClassLoader urlClassLoader = (URLClassLoader) loader;
-                List<File> files = new ArrayList<File>();
+                List<File> files = Lists.newArrayList();
                 for (URL url : urlClassLoader.getURLs()) {
                     files.add(new File(url.getFile()));
                 }
@@ -108,7 +72,7 @@ public class JdkCompiler extends AbstractCompiler {
 
     private final class ClassLoaderImpl extends ClassLoader {
 
-        private final Map<String, JavaFileObject> classes = new HashMap<String, JavaFileObject>();
+        private final Map<String, JavaFileObject> classes = Maps.newHashMap();
 
         ClassLoaderImpl(final ClassLoader parentClassLoader) {
             super(parentClassLoader);
@@ -251,13 +215,13 @@ public class JdkCompiler extends AbstractCompiler {
             Iterable<JavaFileObject> result = super.list(location, packageName, kinds, recurse);
 
             ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-            List<URL> urlList = new ArrayList<URL>();
+            List<URL> urlList = Lists.newArrayList();
             Enumeration<URL> e = contextClassLoader.getResources("com");
             while (e.hasMoreElements()) {
                 urlList.add(e.nextElement());
             }
 
-            ArrayList<JavaFileObject> files = new ArrayList<>();
+            ArrayList<JavaFileObject> files = Lists.newArrayList();
 
             if (location == StandardLocation.CLASS_PATH && kinds.contains(JavaFileObject.Kind.CLASS)) {
                 for (JavaFileObject file : fileObjects.values()) {
@@ -265,7 +229,6 @@ public class JdkCompiler extends AbstractCompiler {
                         files.add(file);
                     }
                 }
-
                 files.addAll(classLoader.files());
             } else if (location == StandardLocation.SOURCE_PATH && kinds.contains(JavaFileObject.Kind.SOURCE)) {
                 for (JavaFileObject file : fileObjects.values()) {
@@ -278,10 +241,8 @@ public class JdkCompiler extends AbstractCompiler {
             for (JavaFileObject file : result) {
                 files.add(file);
             }
-
             return files;
         }
     }
-
 
 }

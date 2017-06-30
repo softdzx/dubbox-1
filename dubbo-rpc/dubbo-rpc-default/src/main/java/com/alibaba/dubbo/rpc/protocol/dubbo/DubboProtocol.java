@@ -36,7 +36,7 @@ public class DubboProtocol extends AbstractProtocol {
 
     public static final String NAME = "dubbo";
 
-    public static final int DEFAULT_PORT = 20880;
+    private static final int DEFAULT_PORT = 20880;
 
     private final Map<String, ExchangeServer> serverMap = Maps.newConcurrentMap(); // <host:port,Exchanger>
 
@@ -46,7 +46,6 @@ public class DubboProtocol extends AbstractProtocol {
 
     //consumer side export a stub service for dispatching event
     //servicekey-stubmethods
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private final ConcurrentMap<String, String> stubServiceMethodsMap = Maps.newConcurrentMap();
 
     private static final String IS_CALLBACK_SERVICE_INVOKE = "_isCallBackServiceInvoke";
@@ -102,7 +101,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         @Override
         public void disconnected(Channel channel) throws RemotingException {
-            LogHelper.info(logger, "disconected from " + channel.getRemoteAddress() + ",url:" + channel.getUrl());
+            LogHelper.info(logger, "disconnected from " + channel.getRemoteAddress() + ",url:" + channel.getUrl());
             invoke(channel, Constants.ON_DISCONNECT_KEY);
         }
 

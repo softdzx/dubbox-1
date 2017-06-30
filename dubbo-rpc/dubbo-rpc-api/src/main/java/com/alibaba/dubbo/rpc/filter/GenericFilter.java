@@ -39,6 +39,7 @@ import com.alibaba.dubbo.rpc.RpcInvocation;
 import com.alibaba.dubbo.rpc.RpcResult;
 import com.alibaba.dubbo.rpc.service.GenericException;
 import com.alibaba.dubbo.rpc.support.ProtocolUtils;
+import com.google.common.base.Strings;
 
 /**
  * GenericInvokerFilter.
@@ -63,7 +64,7 @@ public class GenericFilter implements Filter {
                     args = new Object[params.length];
                 }
                 String generic = inv.getAttachment(Constants.GENERIC_KEY);
-                if (StringUtils.isEmpty(generic)
+                if (Strings.isNullOrEmpty(generic)
                     || ProtocolUtils.isDefaultGenericSerialization(generic)) {
                     args = PojoUtils.realize(args, params, method.getGenericParameterTypes());
                 } else if (ProtocolUtils.isJavaGenericSerialization(generic)) {

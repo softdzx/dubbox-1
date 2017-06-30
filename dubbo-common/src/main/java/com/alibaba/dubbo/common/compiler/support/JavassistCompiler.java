@@ -1,39 +1,18 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.compiler.support;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.alibaba.dubbo.common.utils.ClassHelper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import javassist.*;
+
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.alibaba.dubbo.common.utils.ClassHelper;
-
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtNewConstructor;
-import javassist.CtNewMethod;
-import javassist.LoaderClassPath;
-
 /**
  * JavassistCompiler. (SPI, Singleton, ThreadSafe)
- * 
+ *
  * @author william.liangf
  */
 public class JavassistCompiler extends AbstractCompiler {
@@ -43,7 +22,7 @@ public class JavassistCompiler extends AbstractCompiler {
     private static final Pattern EXTENDS_PATTERN = Pattern.compile("\\s+extends\\s+([\\w\\.]+)[^\\{]*\\{\n");
 
     private static final Pattern IMPLEMENTS_PATTERN = Pattern.compile("\\s+implements\\s+([\\w\\.]+)\\s*\\{\n");
-    
+
     private static final Pattern METHODS_PATTERN = Pattern.compile("\n(private|public|protected)\\s+");
 
     private static final Pattern FIELD_PATTERN = Pattern.compile("[^\n]+=[^\n]+;");
@@ -55,8 +34,8 @@ public class JavassistCompiler extends AbstractCompiler {
         ClassPool pool = new ClassPool(true);
         pool.appendClassPath(new LoaderClassPath(ClassHelper.getCallerClassLoader(getClass())));
         Matcher matcher = IMPORT_PATTERN.matcher(source);
-        List<String> importPackages = new ArrayList<String>();
-        Map<String, String> fullNames = new HashMap<String, String>();
+        List<String> importPackages = Lists.newArrayList();
+        Map<String, String> fullNames = Maps.newHashMap();
         while (matcher.find()) {
             String pkg = matcher.group(1);
             if (pkg.endsWith(".*")) {
@@ -66,10 +45,10 @@ public class JavassistCompiler extends AbstractCompiler {
             } else {
                 int pi = pkg.lastIndexOf('.');
                 if (pi > 0) {
-	                String pkgName = pkg.substring(0, pi);
-	                pool.importPackage(pkgName);
-	                importPackages.add(pkgName);
-	                fullNames.put(pkg.substring(pi + 1), pkg);
+                    String pkgName = pkg.substring(0, pi);
+                    pool.importPackage(pkgName);
+                    importPackages.add(pkgName);
+                    fullNames.put(pkg.substring(pi + 1), pkg);
                 }
             }
         }

@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 /**
  * @author ding.lid
  */
-public class ExtensionLoader_Compatible_Test {
+public class ExtensionLoaderCompatibleTest {
 
     @Test
     public void test_getExtension() throws Exception {

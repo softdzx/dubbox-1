@@ -3,6 +3,7 @@ package com.alibaba.dubbo.rpc.protocol.dubbo;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.utils.AtomicPositiveInteger;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.TimeoutException;
 import com.alibaba.dubbo.remoting.exchange.ExchangeClient;
@@ -70,9 +71,11 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
                 return (Result) currentClient.request(inv, timeout).get();
             }
         } catch (TimeoutException e) {
-            throw new RpcException(RpcException.TIMEOUT_EXCEPTION, "Invoke remote method timeout. method: " + invocation.getMethodName() + ", provider: " + getUrl() + ", cause: " + e.getMessage(), e);
+            throw new RpcException(RpcException.TIMEOUT_EXCEPTION, "Invoke remote method timeout. method: " + invocation.getMethodName() +
+                    ", provider: " + getUrl() + ", cause: " + e.getMessage(), e);
         } catch (RemotingException e) {
-            throw new RpcException(RpcException.NETWORK_EXCEPTION, "Failed to invoke remote method: " + invocation.getMethodName() + ", provider: " + getUrl() + ", cause: " + e.getMessage(), e);
+            throw new RpcException(RpcException.NETWORK_EXCEPTION, "Failed to invoke remote method: " + invocation.getMethodName() +
+                    ", provider: " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }
 
@@ -106,10 +109,9 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
                     try {
                         client.close();
                     } catch (Throwable t) {
-                        logger.warn(t.getMessage(), t);
+                        LogHelper.warn(logger, t.getMessage(), t);
                     }
                 }
-
             } finally {
                 destroyLock.unlock();
             }

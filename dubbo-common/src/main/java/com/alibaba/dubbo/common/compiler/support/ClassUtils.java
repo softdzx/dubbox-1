@@ -15,13 +15,12 @@
  */
 package com.alibaba.dubbo.common.compiler.support;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.google.common.collect.Maps;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -30,11 +29,11 @@ import java.util.Map;
 
 /**
  * ClassUtils. (Tool, Static, ThreadSafe)
- * 
+ *
  * @author william.liangf
  */
 public class ClassUtils {
-    
+
     public static final String CLASS_EXTENSION = ".class";
 
     public static final String JAVA_EXTENSION = ".java";
@@ -46,12 +45,12 @@ public class ClassUtils {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-    
-    public static Class<?> forName(String[] packages, String className)  {
+
+    public static Class<?> forName(String[] packages, String className) {
         try {
             return _forName(className);
         } catch (ClassNotFoundException e) {
-            if (packages != null && packages.length > 0) {
+            if (!CollectionUtils.isEmpty(packages)) {
                 for (String pkg : packages) {
                     try {
                         return _forName(pkg + "." + className);
@@ -62,7 +61,7 @@ public class ClassUtils {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-    
+
     public static Class<?> forName(String className) {
         try {
             return _forName(className);
@@ -70,7 +69,7 @@ public class ClassUtils {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
-    
+
     public static Class<?> _forName(String className) throws ClassNotFoundException {
         if ("boolean".equals(className))
             return boolean.class;
@@ -117,24 +116,25 @@ public class ClassUtils {
             throw e;
         }
     }
-    
+
     private static Class<?> arrayForName(String className) throws ClassNotFoundException {
         return Class.forName(className.endsWith("[]")
                 ? "[L" + className.substring(0, className.length() - 2) + ";"
-                        : className, true, Thread.currentThread().getContextClassLoader());
+                : className, true, Thread.currentThread().getContextClassLoader());
     }
 
     public static boolean isNotEmpty(Object object) {
         return getSize(object) > 0;
     }
-    
+
     public static int getSize(Object object) {
         if (object == null) {
             return 0;
-        } if (object instanceof Collection<?>) {
-            return ((Collection<?>)object).size();
+        }
+        if (object instanceof Collection<?>) {
+            return ((Collection<?>) object).size();
         } else if (object instanceof Map<?, ?>) {
-            return ((Map<?, ?>)object).size();
+            return ((Map<?, ?>) object).size();
         } else if (object.getClass().isArray()) {
             return Array.getLength(object);
         } else {
@@ -149,29 +149,25 @@ public class ClassUtils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static Class<?> getGenericClass(Class<?> cls) {
         return getGenericClass(cls, 0);
     }
 
     public static Class<?> getGenericClass(Class<?> cls, int i) {
-        try {
-            ParameterizedType parameterizedType = ((ParameterizedType) cls.getGenericInterfaces()[0]);
-            Object genericClass = parameterizedType.getActualTypeArguments()[i];
-            if (genericClass instanceof ParameterizedType) { // 处理多级泛型
-                return (Class<?>) ((ParameterizedType) genericClass).getRawType();
-            } else if (genericClass instanceof GenericArrayType) { // 处理数组泛型
-                return (Class<?>) ((GenericArrayType) genericClass).getGenericComponentType();
-            } else if (genericClass != null) {
-                return (Class<?>) genericClass;
-            }
-        } catch (Throwable ignore) {
+        ParameterizedType parameterizedType = ((ParameterizedType) cls.getGenericInterfaces()[0]);
+        Object genericClass = parameterizedType.getActualTypeArguments()[i];
+        if (genericClass instanceof ParameterizedType) { // 处理多级泛型
+            return (Class<?>) ((ParameterizedType) genericClass).getRawType();
+        } else if (genericClass instanceof GenericArrayType) { // 处理数组泛型
+            return (Class<?>) ((GenericArrayType) genericClass).getGenericComponentType();
+        } else if (genericClass != null) {
+            return (Class<?>) genericClass;
         }
         if (cls.getSuperclass() != null) {
             return getGenericClass(cls.getSuperclass(), i);
-        } else {
-            throw new IllegalArgumentException(cls.getName() + " generic type undefined!");
         }
+        throw new IllegalArgumentException(cls.getName() + " generic type undefined!");
     }
 
     public static String toString(Throwable e) {
@@ -191,13 +187,13 @@ public class ClassUtils {
     }
 
     private static final int JIT_LIMIT = 5 * 1024;
-    
+
     public static void checkBytecode(String name, byte[] bytecode) {
         if (bytecode.length > JIT_LIMIT) {
             System.err.println("The template bytecode too long, may be affect the JIT compiler. template class: " + name);
         }
     }
-    
+
     public static String getSizeMethod(Class<?> cls) {
         try {
             return cls.getMethod("size", new Class<?>[0]).getName() + "()";
@@ -217,12 +213,12 @@ public class ClassUtils {
             }
         }
     }
-    
+
     public static String getMethodName(Method method, Class<?>[] parameterClasses, String rightCode) {
         if (method.getParameterTypes().length > parameterClasses.length) {
             Class<?>[] types = method.getParameterTypes();
             StringBuilder buf = new StringBuilder(rightCode);
-            for (int i = parameterClasses.length; i < types.length; i ++) {
+            for (int i = parameterClasses.length; i < types.length; i++) {
                 if (buf.length() > 0) {
                     buf.append(",");
                 }
@@ -247,7 +243,7 @@ public class ClassUtils {
         }
         return method.getName() + "(" + rightCode + ")";
     }
-    
+
     public static Method searchMethod(Class<?> currentClass, String name, Class<?>[] parameterTypes) throws NoSuchMethodException {
         if (currentClass == null) {
             throw new NoSuchMethodException("class == null");
@@ -262,13 +258,13 @@ public class ClassUtils {
                     if (parameterTypes.length > 0) {
                         Class<?>[] types = method.getParameterTypes();
                         boolean match = true;
-                        for (int i = 0; i < parameterTypes.length; i ++) {
-                            if (! types[i].isAssignableFrom(parameterTypes[i])) {
+                        for (int i = 0; i < parameterTypes.length; i++) {
+                            if (!types[i].isAssignableFrom(parameterTypes[i])) {
                                 match = false;
                                 break;
                             }
                         }
-                        if (! match) {
+                        if (!match) {
                             continue;
                         }
                     }
@@ -278,7 +274,7 @@ public class ClassUtils {
             throw e;
         }
     }
-    
+
     public static String getInitCode(Class<?> type) {
         if (byte.class.equals(type)
                 || short.class.equals(type)
@@ -295,17 +291,18 @@ public class ClassUtils {
             return "null";
         }
     }
-    
+
     public static <K, V> Map<K, V> toMap(Map.Entry<K, V>[] entries) {
-        Map<K, V> map = new HashMap<K, V>();
+        Map<K, V> map = Maps.newHashMap();
         if (entries != null && entries.length > 0) {
-            for (Map.Entry<K, V> enrty : entries) {
-                map.put(enrty.getKey(), enrty.getValue());
+            for (Map.Entry<K, V> entry : entries) {
+                map.put(entry.getKey(), entry.getValue());
             }
         }
         return map;
     }
 
-    private ClassUtils() {}
+    private ClassUtils() {
+    }
 
 }
