@@ -16,6 +16,11 @@ abstract public class CollectionUtils {
         return list;
     }
 
+    public static <E> ConcurrentHashSet<E> newConcurrentSet() {
+//        Lists.newArrayList()
+        return new ConcurrentHashSet<>();
+    }
+
     private static final Comparator<String> SIMPLE_NAME_COMPARATOR = (s1, s2) -> {
         if (s1 == null && s2 == null) {
             return 0;
@@ -89,9 +94,9 @@ abstract public class CollectionUtils {
         if (map.isEmpty()) {
             return list;
         }
-        map.forEach((key, value) -> {
-            list.add(Strings.isNullOrEmpty(value) ? key : key + separator + value);
-        });
+        map.forEach((key, value) ->
+                list.add(Strings.isNullOrEmpty(value) ? key : key + separator + value)
+        );
         return list;
     }
 
@@ -131,10 +136,7 @@ abstract public class CollectionUtils {
         if (obj1 == null && obj2 == null) {
             return true;
         }
-        if (obj1 == null || obj2 == null) {
-            return false;
-        }
-        return obj1.equals(obj2);
+        return !(obj1 == null || obj2 == null) && obj1.equals(obj2);
     }
 
     public static Map<String, String> toStringMap(String... pairs) {

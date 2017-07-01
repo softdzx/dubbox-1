@@ -5,6 +5,7 @@ import com.alibaba.dubbo.registry.NotifyListener;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,8 @@ public class NotifyListenerConsulWrapper {
     private String serviceInterface;
     private List<URL> providerUrls;
 
-    public NotifyListenerConsulWrapper(NotifyListener notifyListener, ConsulClient consulClient, String serviceInterface) {
+    public NotifyListenerConsulWrapper(NotifyListener notifyListener, ConsulClient consulClient,
+                                       String serviceInterface) {
         this.notifyListener = notifyListener;
         this.consulClient = consulClient;
         this.serviceInterface = serviceInterface;
@@ -48,7 +50,7 @@ public class NotifyListenerConsulWrapper {
     }
 
     public List<URL> getProviderUrls(String serviceName) {
-        List<URL> urls = new ArrayList<>();
+        List<URL> urls = Lists.newArrayList();
         Response<List<HealthService>> healthServices = consulClient.getHealthServices(serviceName, true, null);
         for (HealthService healthService : healthServices.getValue()) {
             urls.add(URL.valueOf(healthService.getService().getAddress()));

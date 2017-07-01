@@ -1,29 +1,12 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.registry.consul;
 
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.common.logger.Logger;
-import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.support.FailbackRegistry;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.agent.model.NewService;
+import com.google.common.collect.Maps;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -33,12 +16,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ConsulRegistry extends FailbackRegistry {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConsulRegistry.class);
-    ConsulClient consulClient;
+    //    private static final Logger logger = LoggerFactory.getLogger(ConsulRegistry.class);
+    private ConsulClient consulClient;
 
-    private static final int DEFAULT_CONSUL_PORT = 8500;
+//    private static final int DEFAULT_CONSUL_PORT = 8500;
 
-    private final ConcurrentMap<String, NotifyListenerConsulWrapper> notifiers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, NotifyListenerConsulWrapper> notifiers = Maps.newConcurrentMap();
 
     public ConsulRegistry(URL url) {
         super(url);

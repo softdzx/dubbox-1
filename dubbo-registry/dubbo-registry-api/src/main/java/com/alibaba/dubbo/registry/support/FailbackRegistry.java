@@ -1,73 +1,52 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.registry.support;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
-import com.alibaba.dubbo.common.utils.ConcurrentHashSet;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.NamedThreadFactory;
 import com.alibaba.dubbo.registry.NotifyListener;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
 
 /**
  * FailbackRegistry. (SPI, Prototype, ThreadSafe)
- * 
+ *
  * @author william.liangf
  */
 public abstract class FailbackRegistry extends AbstractRegistry {
 
     // 定时任务执行器
-    private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboRegistryFailedRetryTimer", true));
+    private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(1,
+            new NamedThreadFactory("DubboRegistryFailedRetryTimer", true));
 
     // 失败重试定时器，定时检查是否有请求失败，如有，无限次重试
     private final ScheduledFuture<?> retryFuture;
 
-    private final Set<URL> failedRegistered = new ConcurrentHashSet<URL>();
+    private final Set<URL> failedRegistered = CollectionUtils.newConcurrentSet();
 
-    private final Set<URL> failedUnregistered = new ConcurrentHashSet<URL>();
+    private final Set<URL> failedUnregistered = CollectionUtils.newConcurrentSet();
 
-    private final ConcurrentMap<URL, Set<NotifyListener>> failedSubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
+    private final ConcurrentMap<URL, Set<NotifyListener>> failedSubscribed = Maps.newConcurrentMap();
 
-    private final ConcurrentMap<URL, Set<NotifyListener>> failedUnsubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
+    private final ConcurrentMap<URL, Set<NotifyListener>> failedUnSubscribed = Maps.newConcurrentMap();
 
-    private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = new ConcurrentHashMap<URL, Map<NotifyListener, List<URL>>>();
+    private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = Maps.newConcurrentMap();
 
     public FailbackRegistry(URL url) {
         super(url);
         int retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
-        this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                // 检测并连接注册中心
-                try {
-                    retry();
-                } catch (Throwable t) { // 防御性容错
-                    logger.error("Unexpected error occur at failed retry, cause: " + t.getMessage(), t);
-                }
+        this.retryFuture = retryExecutor.scheduleWithFixedDelay(() -> {
+            // 检测并连接注册中心
+            try {
+                retry();
+            } catch (Throwable t) { // 防御性容错
+                LogHelper.error(logger, "Unexpected error occur at failed retry, cause: " + t.getMessage(), t);
             }
         }, retryPeriod, retryPeriod, TimeUnit.MILLISECONDS);
     }
@@ -88,8 +67,8 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         return failedSubscribed;
     }
 
-    public Map<URL, Set<NotifyListener>> getFailedUnsubscribed() {
-        return failedUnsubscribed;
+    public Map<URL, Set<NotifyListener>> getFailedUnSubscribed() {
+        return failedUnSubscribed;
     }
 
     public Map<URL, Map<NotifyListener, List<URL>>> getFailedNotified() {
@@ -99,7 +78,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     private void addFailedSubscribed(URL url, NotifyListener listener) {
         Set<NotifyListener> listeners = failedSubscribed.get(url);
         if (listeners == null) {
-            failedSubscribed.putIfAbsent(url, new ConcurrentHashSet<NotifyListener>());
+            failedSubscribed.putIfAbsent(url, CollectionUtils.newConcurrentSet());
             listeners = failedSubscribed.get(url);
         }
         listeners.add(listener);
@@ -110,7 +89,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         if (listeners != null) {
             listeners.remove(listener);
         }
-        listeners = failedUnsubscribed.get(url);
+        listeners = failedUnSubscribed.get(url);
         if (listeners != null) {
             listeners.remove(listener);
         }
@@ -134,17 +113,15 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             // 如果开启了启动时检测，则直接抛出异常
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
-                    && ! Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
-            boolean skipFailback = t instanceof SkipFailbackWrapperException;
-            if (check || skipFailback) {
-                if(skipFailback) {
+                    && !Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
+            boolean skipFailBack = t instanceof SkipFailbackWrapperException;
+            if (check || skipFailBack) {
+                if (skipFailBack) {
                     t = t.getCause();
                 }
                 throw new IllegalStateException("Failed to register " + url + " to registry " + getUrl().getAddress() + ", cause: " + t.getMessage(), t);
-            } else {
-                logger.error("Failed to register " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
-
+            LogHelper.error(logger, "Failed to register " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             // 将失败的注册请求记录到失败列表，定时重试
             failedRegistered.add(url);
         }
@@ -164,17 +141,15 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             // 如果开启了启动时检测，则直接抛出异常
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
-                    && ! Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
-            boolean skipFailback = t instanceof SkipFailbackWrapperException;
-            if (check || skipFailback) {
-                if(skipFailback) {
+                    && !Constants.CONSUMER_PROTOCOL.equals(url.getProtocol());
+            boolean skipFailBack = t instanceof SkipFailbackWrapperException;
+            if (check || skipFailBack) {
+                if (skipFailBack) {
                     t = t.getCause();
                 }
                 throw new IllegalStateException("Failed to unregister " + url + " to registry " + getUrl().getAddress() + ", cause: " + t.getMessage(), t);
-            } else {
-                logger.error("Failed to uregister " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
-
+            LogHelper.error(logger, "Failed to unRegister " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             // 将失败的取消注册请求记录到失败列表，定时重试
             failedUnregistered.add(url);
         }
@@ -191,22 +166,24 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             Throwable t = e;
 
             List<URL> urls = getCacheUrls(url);
-            if (urls != null && urls.size() > 0) {
+            if (!CollectionUtils.isEmpty(urls)) {
                 notify(url, listener, urls);
-                logger.error("Failed to subscribe " + url + ", Using cached list: " + urls + " from cache file: " + getUrl().getParameter(Constants.FILE_KEY, System.getProperty("user.home") + "/dubbo-registry-" + url.getHost() + ".cache") + ", cause: " + t.getMessage(), t);
+                LogHelper.error(logger, "Failed to subscribe " + url + ", Using cached list: " + urls
+                        + " from cache file: " + getUrl().getParameter(Constants.FILE_KEY,
+                        System.getProperty("user.home") + "/dubbo-registry-" + url.getHost()
+                                + ".cache") + ", cause: " + t.getMessage(), t);
             } else {
                 // 如果开启了启动时检测，则直接抛出异常
                 boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                         && url.getParameter(Constants.CHECK_KEY, true);
-                boolean skipFailback = t instanceof SkipFailbackWrapperException;
-                if (check || skipFailback) {
-                    if(skipFailback) {
+                boolean skipFailBack = t instanceof SkipFailbackWrapperException;
+                if (check || skipFailBack) {
+                    if (skipFailBack) {
                         t = t.getCause();
                     }
                     throw new IllegalStateException("Failed to subscribe " + url + ", cause: " + t.getMessage(), t);
-                } else {
-                    logger.error("Failed to subscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
                 }
+                LogHelper.error(logger, "Failed to subscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
 
             // 将失败的订阅请求记录到失败列表，定时重试
@@ -227,21 +204,19 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             // 如果开启了启动时检测，则直接抛出异常
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true);
-            boolean skipFailback = t instanceof SkipFailbackWrapperException;
-            if (check || skipFailback) {
-                if(skipFailback) {
+            boolean skipFailBack = t instanceof SkipFailbackWrapperException;
+            if (check || skipFailBack) {
+                if (skipFailBack) {
                     t = t.getCause();
                 }
-                throw new IllegalStateException("Failed to unsubscribe " + url + " to registry " + getUrl().getAddress() + ", cause: " + t.getMessage(), t);
-            } else {
-                logger.error("Failed to unsubscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
+                throw new IllegalStateException("Failed to unSubscribe " + url + " to registry " + getUrl().getAddress() + ", cause: " + t.getMessage(), t);
             }
-
+            LogHelper.error(logger, "Failed to unSubscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             // 将失败的取消订阅请求记录到失败列表，定时重试
-            Set<NotifyListener> listeners = failedUnsubscribed.get(url);
+            Set<NotifyListener> listeners = failedUnSubscribed.get(url);
             if (listeners == null) {
-                failedUnsubscribed.putIfAbsent(url, new ConcurrentHashSet<NotifyListener>());
-                listeners = failedUnsubscribed.get(url);
+                failedUnSubscribed.putIfAbsent(url, CollectionUtils.newConcurrentSet());
+                listeners = failedUnSubscribed.get(url);
             }
             listeners.add(listener);
         }
@@ -256,176 +231,126 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             throw new IllegalArgumentException("notify listener == null");
         }
         try {
-        	doNotify(url, listener, urls);
+            doNotify(url, listener, urls);
         } catch (Exception t) {
             // 将失败的通知请求记录到失败列表，定时重试
             Map<NotifyListener, List<URL>> listeners = failedNotified.get(url);
             if (listeners == null) {
-                failedNotified.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, List<URL>>());
+                failedNotified.putIfAbsent(url, Maps.newConcurrentMap());
                 listeners = failedNotified.get(url);
             }
             listeners.put(listener, urls);
-            logger.error("Failed to notify for subscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
+            LogHelper.error(logger, "Failed to notify for subscribe " + url + ", waiting for retry, cause: "
+                    + t.getMessage(), t);
         }
     }
-    
+
     protected void doNotify(URL url, NotifyListener listener, List<URL> urls) {
-    	super.notify(url, listener, urls);
+        super.notify(url, listener, urls);
     }
-    
+
     @Override
     protected void recover() throws Exception {
         // register
-        Set<URL> recoverRegistered = new HashSet<URL>(getRegistered());
-        if (! recoverRegistered.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Recover register url " + recoverRegistered);
-            }
-            for (URL url : recoverRegistered) {
-                failedRegistered.add(url);
-            }
+        Set<URL> recoverRegistered = Sets.newHashSet(getRegistered());
+        if (!CollectionUtils.isEmpty(recoverRegistered)) {
+            LogHelper.info(logger, "Recover register url " + recoverRegistered);
+            failedRegistered.addAll(recoverRegistered);
         }
         // subscribe
-        Map<URL, Set<NotifyListener>> recoverSubscribed = new HashMap<URL, Set<NotifyListener>>(getSubscribed());
-        if (! recoverSubscribed.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Recover subscribe url " + recoverSubscribed.keySet());
-            }
-            for (Map.Entry<URL, Set<NotifyListener>> entry : recoverSubscribed.entrySet()) {
-                URL url = entry.getKey();
-                for (NotifyListener listener : entry.getValue()) {
-                    addFailedSubscribed(url, listener);
-                }
-            }
+        Map<URL, Set<NotifyListener>> recoverSubscribed = Maps.newHashMap(getSubscribed());
+        if (!CollectionUtils.isEmpty(recoverSubscribed)) {
+            LogHelper.info(logger, "Recover subscribe url " + recoverSubscribed.keySet());
+            recoverSubscribed.forEach((url, listeners) -> listeners.forEach(listener ->
+                    addFailedSubscribed(url, listener)));
         }
     }
 
     // 重试失败的动作
     protected void retry() {
-        if (! failedRegistered.isEmpty()) {
-            Set<URL> failed = new HashSet<URL>(failedRegistered);
+        if (!failedRegistered.isEmpty()) {
+            Set<URL> failed = Sets.newHashSet(failedRegistered);
             if (failed.size() > 0) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Retry register " + failed);
-                }
+                LogHelper.info(logger, "Retry register " + failed);
                 try {
-                    for (URL url : failed) {
-                        try {
-                            doRegister(url);
-                            failedRegistered.remove(url);
-                        } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                            logger.warn("Failed to retry register " + failed + ", waiting for again, cause: " + t.getMessage(), t);
-                        }
-                    }
+                    failed.forEach(url -> {
+                        doRegister(url);
+                        failedRegistered.remove(url);
+                    });
                 } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                    logger.warn("Failed to retry register " + failed + ", waiting for again, cause: " + t.getMessage(), t);
+                    LogHelper.warn(logger, "Failed to retry register " + failed + ", waiting for again, cause: " + t.getMessage(), t);
                 }
             }
         }
-        if(! failedUnregistered.isEmpty()) {
-            Set<URL> failed = new HashSet<URL>(failedUnregistered);
+        if (!failedUnregistered.isEmpty()) {
+            Set<URL> failed = Sets.newHashSet(failedUnregistered);
             if (failed.size() > 0) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Retry unregister " + failed);
-                }
+                LogHelper.info(logger, "Retry unregister " + failed);
                 try {
-                    for (URL url : failed) {
-                        try {
-                            doUnregister(url);
-                            failedUnregistered.remove(url);
-                        } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                            logger.warn("Failed to retry unregister  " + failed + ", waiting for again, cause: " + t.getMessage(), t);
-                        }
-                    }
+                    failed.forEach(url -> {
+                        doUnregister(url);
+                        failedUnregistered.remove(url);
+                    });
                 } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                    logger.warn("Failed to retry unregister  " + failed + ", waiting for again, cause: " + t.getMessage(), t);
+                    LogHelper.warn(logger, "Failed to retry unregister  " + failed + ", waiting for again, cause: "
+                            + t.getMessage(), t);
                 }
             }
         }
-        if (! failedSubscribed.isEmpty()) {
-            Map<URL, Set<NotifyListener>> failed = new HashMap<URL, Set<NotifyListener>>(failedSubscribed);
-            for (Map.Entry<URL, Set<NotifyListener>> entry : new HashMap<URL, Set<NotifyListener>>(failed).entrySet()) {
-                if (entry.getValue() == null || entry.getValue().size() == 0) {
-                    failed.remove(entry.getKey());
-                }
-            }
+        if (!failedSubscribed.isEmpty()) {
+            Map<URL, Set<NotifyListener>> failed = Maps.newHashMap(failedSubscribed);
+            Maps.newHashMap(failed).forEach((url, notifyListeners) -> {
+                if (CollectionUtils.isEmpty(notifyListeners))
+                    failed.remove(url);
+            });
             if (failed.size() > 0) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Retry subscribe " + failed);
-                }
+                LogHelper.info(logger, "Retry subscribe " + failed);
                 try {
-                    for (Map.Entry<URL, Set<NotifyListener>> entry : failed.entrySet()) {
-                        URL url = entry.getKey();
-                        Set<NotifyListener> listeners = entry.getValue();
-                        for (NotifyListener listener : listeners) {
-                            try {
-                                doSubscribe(url, listener);
-                                listeners.remove(listener);
-                            } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                                logger.warn("Failed to retry subscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);
-                            }
-                        }
-                    }
+                    failed.forEach((url, listeners) -> listeners.forEach(listener -> {
+                        doSubscribe(url, listener);
+                        listeners.remove(listener);
+                    }));
                 } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                    logger.warn("Failed to retry subscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);
+                    LogHelper.warn(logger, "Failed to retry subscribe " + failed + ", waiting for again, cause: "
+                            + t.getMessage(), t);
                 }
             }
         }
-        if (! failedUnsubscribed.isEmpty()) {
-            Map<URL, Set<NotifyListener>> failed = new HashMap<URL, Set<NotifyListener>>(failedUnsubscribed);
-            for (Map.Entry<URL, Set<NotifyListener>> entry : new HashMap<URL, Set<NotifyListener>>(failed).entrySet()) {
-                if (entry.getValue() == null || entry.getValue().size() == 0) {
-                    failed.remove(entry.getKey());
-                }
-            }
+        if (!failedUnSubscribed.isEmpty()) {
+            Map<URL, Set<NotifyListener>> failed = Maps.newHashMap(failedUnSubscribed);
+            Maps.newHashMap(failed).forEach((url, notifyListeners) -> {
+                if (CollectionUtils.isEmpty(notifyListeners))
+                    failed.remove(url);
+            });
             if (failed.size() > 0) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Retry unsubscribe " + failed);
-                }
+                LogHelper.info(logger, "Retry unSubscribe " + failed);
                 try {
-                    for (Map.Entry<URL, Set<NotifyListener>> entry : failed.entrySet()) {
-                        URL url = entry.getKey();
-                        Set<NotifyListener> listeners = entry.getValue();
-                        for (NotifyListener listener : listeners) {
-                            try {
-                                doUnsubscribe(url, listener);
-                                listeners.remove(listener);
-                            } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                                logger.warn("Failed to retry unsubscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);
-                            }
-                        }
-                    }
+                    failed.forEach((url, listeners) -> listeners.forEach(listener -> {
+                        doUnsubscribe(url, listener);
+                        listeners.remove(listener);
+                    }));
                 } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                    logger.warn("Failed to retry unsubscribe " + failed + ", waiting for again, cause: " + t.getMessage(), t);
+                    LogHelper.warn(logger, "Failed to retry unSubscribe " + failed + ", waiting for again, cause: "
+                            + t.getMessage(), t);
                 }
             }
         }
-        if (! failedNotified.isEmpty()) {
-            Map<URL, Map<NotifyListener, List<URL>>> failed = new HashMap<URL, Map<NotifyListener, List<URL>>>(failedNotified);
-            for (Map.Entry<URL, Map<NotifyListener, List<URL>>> entry : new HashMap<URL, Map<NotifyListener, List<URL>>>(failed).entrySet()) {
-                if (entry.getValue() == null || entry.getValue().size() == 0) {
-                    failed.remove(entry.getKey());
-                }
-            }
+        if (!failedNotified.isEmpty()) {
+            Map<URL, Map<NotifyListener, List<URL>>> failed = Maps.newHashMap(failedNotified);
+            Maps.newHashMap(failed).forEach((url, notifyListeners) -> {
+                if (CollectionUtils.isEmpty(notifyListeners))
+                    failed.remove(url);
+            });
             if (failed.size() > 0) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Retry notify " + failed);
-                }
+                LogHelper.info(logger, "Retry notify " + failed);
                 try {
-                    for (Map<NotifyListener, List<URL>> values : failed.values()) {
-                        for (Map.Entry<NotifyListener, List<URL>> entry : values.entrySet()) {
-                            try {
-                                NotifyListener listener = entry.getKey();
-                                List<URL> urls = entry.getValue();
-                                listener.notify(urls);
-                                values.remove(listener);
-                            } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                                logger.warn("Failed to retry notify " + failed + ", waiting for again, cause: " + t.getMessage(), t);
-                            }
-                        }
-                    }
+                    failed.forEach((url, listeners) -> listeners.forEach((listener, urls) -> {
+                        listener.notify(urls);
+                        listeners.remove(listener);
+                    }));
                 } catch (Throwable t) { // 忽略所有异常，等待下次重试
-                    logger.warn("Failed to retry notify " + failed + ", waiting for again, cause: " + t.getMessage(), t);
+                    LogHelper.warn(logger, "Failed to retry notify " + failed + ", waiting for again, cause: "
+                            + t.getMessage(), t);
                 }
             }
         }
@@ -437,7 +362,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         try {
             retryFuture.cancel(true);
         } catch (Throwable t) {
-            logger.warn(t.getMessage(), t);
+            LogHelper.warn(logger, t.getMessage(), t);
         }
     }
 
