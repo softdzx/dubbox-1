@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config;
 
 import com.alibaba.dubbo.common.Constants;
@@ -20,10 +5,7 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.Version;
 import com.alibaba.dubbo.common.bytecode.Wrapper;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
-import com.alibaba.dubbo.common.utils.ClassHelper;
-import com.alibaba.dubbo.common.utils.ConfigUtils;
-import com.alibaba.dubbo.common.utils.NetUtils;
-import com.alibaba.dubbo.common.utils.StringUtils;
+import com.alibaba.dubbo.common.utils.*;
 import com.alibaba.dubbo.config.annotation.DubboService;
 import com.alibaba.dubbo.config.support.Parameter;
 import com.alibaba.dubbo.rpc.Exporter;
@@ -34,6 +16,8 @@ import com.alibaba.dubbo.rpc.cluster.ConfiguratorFactory;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.ProtocolUtils;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.lang.reflect.Method;
 import java.net.*;
@@ -43,7 +27,6 @@ import java.util.*;
  * ServiceConfig
  *
  * @author william.liangf
- * @export
  */
 public class ServiceConfig<T> extends AbstractServiceConfig {
 
@@ -51,9 +34,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
-    private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class)
+            .getAdaptiveExtension();
 
-    private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
+    private static final Map<String, Integer> RANDOM_PORT_MAP = Maps.newHashMap();
 
     /**
      * 接口类型
@@ -81,9 +65,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private ProviderConfig provider;
 
-    private final List<URL> urls = new ArrayList<URL>();
+    private final List<URL> urls = Lists.newArrayList();
 
-    private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
+    private final List<Exporter<?>> exporters = Lists.newArrayList();
 
     private transient volatile boolean exported;
 
@@ -99,7 +83,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public URL toUrl() {
-        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
+        return CollectionUtils.isEmpty(urls) ? null : urls.iterator().next();
     }
 
     public List<URL> toUrls() {
@@ -129,14 +113,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             return;
         }
         if (delay != null && delay > 0) {
-            Thread thread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        Thread.sleep(delay);
-                    } catch (Throwable ignore) {
-                    }
-                    doExport();
+            Thread thread = new Thread(() -> {
+                try {
+                    Thread.sleep(delay);
+                } catch (Throwable ignore) {
                 }
+                doExport();
             });
             thread.setDaemon(true);
             thread.setName("DelayExportServiceThread");
@@ -218,7 +200,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException(e.getMessage(), e);
             }
             if (!interfaceClass.isAssignableFrom(localClass)) {
-                throw new IllegalStateException("The local implemention class " + localClass.getName() + " not implement interface " + interfaceName);
+                throw new IllegalStateException("The local implemention class " + localClass.getName()
+                        + " not implement interface " + interfaceName);
             }
         }
         if (stub != null) {
@@ -232,7 +215,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException(e.getMessage(), e);
             }
             if (!interfaceClass.isAssignableFrom(stubClass)) {
-                throw new IllegalStateException("The stub implemention class " + stubClass.getName() + " not implement interface " + interfaceName);
+                throw new IllegalStateException("The stub implemention class " + stubClass.getName()
+                        + " not implement interface " + interfaceName);
             }
         }
         checkApplication();
@@ -265,7 +249,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (unexported) {
             return;
         }
-        if (exporters != null && exporters.size() > 0) {
+        if (!CollectionUtils.isEmpty(exporters)) {
             for (Exporter<?> exporter : exporters) {
                 try {
                     exporter.unexport();
@@ -288,7 +272,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         String name = protocolConfig.getName();
-        if (name == null || name.length() == 0) {
+        if (Strings.isNullOrEmpty(name)) {
             name = "dubbo";
         }
 
@@ -299,7 +283,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         } else {
             host = protocolConfig.getHost();
         }
-        if (provider != null && (host == null || host.length() == 0)) {
+        if (provider != null && Strings.isNullOrEmpty(host)) {
             host = provider.getHost();
         }
         if (NetUtils.isInvalidLocalHost(host)) {
@@ -310,7 +294,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 logger.warn(e.getMessage(), e);
             }
             if (NetUtils.isInvalidLocalHost(host)) {
-                if (registryURLs != null && registryURLs.size() > 0) {
+                if (!CollectionUtils.isEmpty(registryURLs)) {
                     for (URL registryURL : registryURLs) {
                         try {
                             Socket socket = new Socket();

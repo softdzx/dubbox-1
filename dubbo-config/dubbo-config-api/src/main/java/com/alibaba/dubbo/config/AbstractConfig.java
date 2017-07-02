@@ -396,7 +396,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     protected static void checkParameterName(Map<String, String> parameters) {
-        if (parameters == null || parameters.size() == 0) {
+        if (CollectionUtils.isEmpty(parameters)) {
             return;
         }
         for (Map.Entry<String, String> entry : parameters.entrySet()) {

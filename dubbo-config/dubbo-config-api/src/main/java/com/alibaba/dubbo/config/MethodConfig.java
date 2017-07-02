@@ -19,12 +19,12 @@ import java.util.List;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.config.support.Parameter;
+import com.google.common.base.Strings;
 
 /**
  * MethodConfig
  *
  * @author william.liangf
- * @export
  */
 public class MethodConfig extends AbstractMethodConfig {
 
@@ -112,7 +112,7 @@ public class MethodConfig extends AbstractMethodConfig {
     public void setName(String name) {
         checkMethodName("name", name);
         this.name = name;
-        if (id == null || id.length() == 0) {
+        if (Strings.isNullOrEmpty(id)) {
             id = name;
         }
     }

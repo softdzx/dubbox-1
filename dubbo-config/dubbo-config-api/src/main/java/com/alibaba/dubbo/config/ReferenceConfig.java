@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.config;
 
 import com.alibaba.dubbo.common.Constants;
@@ -20,10 +5,7 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.Version;
 import com.alibaba.dubbo.common.bytecode.Wrapper;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
-import com.alibaba.dubbo.common.utils.ConfigUtils;
-import com.alibaba.dubbo.common.utils.NetUtils;
-import com.alibaba.dubbo.common.utils.ReflectUtils;
-import com.alibaba.dubbo.common.utils.StringUtils;
+import com.alibaba.dubbo.common.utils.*;
 import com.alibaba.dubbo.config.annotation.DubboConsumer;
 import com.alibaba.dubbo.config.support.Parameter;
 import com.alibaba.dubbo.rpc.Invoker;
@@ -37,6 +19,9 @@ import com.alibaba.dubbo.rpc.cluster.support.ClusterUtils;
 import com.alibaba.dubbo.rpc.protocol.injvm.InjvmProtocol;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.ProtocolUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,17 +33,19 @@ import java.util.*;
  * ReferenceConfig
  *
  * @author william.liangf
- * @export
  */
 public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     private static final long serialVersionUID = -5864351140409987595L;
 
-    private static final Protocol refprotocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
+    private static final Protocol refProtocol = ExtensionLoader.getExtensionLoader(Protocol.class)
+            .getAdaptiveExtension();
 
-    private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
+    private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class)
+            .getAdaptiveExtension();
 
-    private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class)
+            .getAdaptiveExtension();
 
     /**
      * 接口类型
@@ -102,7 +89,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     private transient volatile boolean destroyed;
 
-    private final List<URL> urls = new ArrayList<>();
+    private final List<URL> urls = Lists.newArrayList();
 
     @SuppressWarnings("unused")
     private final Object finalizerGuardian = new Object() {
@@ -132,7 +119,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     public URL toUrl() {
-        return urls == null || urls.size() == 0 ? null : urls.iterator().next();
+        return CollectionUtils.isEmpty(urls) ? null : urls.iterator().next();
     }
 
     public List<URL> toUrls() {
@@ -160,7 +147,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         try {
             invoker.destroy();
         } catch (Throwable t) {
-            logger.warn("Unexpected err when destroy invoker of ReferenceConfig(" + url + ").", t);
+            LogHelper.warn(logger, "Unexpected err when destroy invoker of ReferenceConfig(" + url + ").", t);
         }
         invoker = null;
         ref = null;
@@ -193,40 +180,32 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
-        if (resolve == null || resolve.length() == 0) {
+        if (Strings.isNullOrEmpty(resolve)) {
             resolveFile = System.getProperty("dubbo.resolve.file");
-            if (resolveFile == null || resolveFile.length() == 0) {
-                File userResolveFile = new File(new File(System.getProperty("user.home")), "dubbo-resolve.properties");
+            if (Strings.isNullOrEmpty(resolveFile)) {
+                File userResolveFile = new File(new File(System.getProperty("user.home")),
+                        "dubbo-resolve.properties");
                 if (userResolveFile.exists()) {
                     resolveFile = userResolveFile.getAbsolutePath();
                 }
             }
-            if (resolveFile != null && resolveFile.length() > 0) {
+            if (!Strings.isNullOrEmpty(resolveFile)) {
                 Properties properties = new Properties();
-                FileInputStream fis = null;
-                try {
-                    fis = new FileInputStream(new File(resolveFile));
+                try (FileInputStream fis = new FileInputStream(new File(resolveFile))) {
                     properties.load(fis);
                 } catch (IOException e) {
                     throw new IllegalStateException("Unload " + resolveFile + ", cause: " + e.getMessage(), e);
-                } finally {
-                    try {
-                        if (null != fis) fis.close();
-                    } catch (IOException e) {
-                        logger.warn(e.getMessage(), e);
-                    }
                 }
                 resolve = properties.getProperty(interfaceName);
             }
         }
-        if (resolve != null && resolve.length() > 0) {
+        if (!Strings.isNullOrEmpty(resolve)) {
             url = resolve;
-            if (logger.isWarnEnabled()) {
-                if (resolveFile != null && resolveFile.length() > 0) {
-                    logger.warn("Using default dubbo resolve file " + resolveFile + " replace " + interfaceName + "" + resolve + " to p2p invoke remote service.");
-                } else {
-                    logger.warn("Using -D" + interfaceName + "=" + resolve + " to p2p invoke remote service.");
-                }
+            if (!Strings.isNullOrEmpty(resolveFile)) {
+                LogHelper.warn(logger, "Using default dubbo resolve file " + resolveFile + " replace "
+                        + interfaceName + "" + resolve + " to p2p invoke remote service.");
+            } else {
+                LogHelper.warn(logger, "Using -D" + interfaceName + "=" + resolve + " to p2p invoke remote service.");
             }
         }
         if (consumer != null) {
@@ -261,8 +240,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         checkApplication();
         checkStubAndMock(interfaceClass);
-        Map<String, String> map = new HashMap<>();
-        Map<Object, Object> attributes = new HashMap<>();
+        Map<String, String> map = Maps.newHashMap();
+        Map<Object, Object> attributes = Maps.newHashMap();
         map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
         map.put(Constants.DUBBO_VERSION_KEY, Version.getVersion());
         map.put(Constants.TIMESTAMP_KEY, String.valueOf(System.currentTimeMillis()));
@@ -271,13 +250,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         if (!isGeneric()) {
             String revision = Version.getVersion(interfaceClass, version);
-            if (revision != null && revision.length() > 0) {
+            if (!Strings.isNullOrEmpty(revision)) {
                 map.put("revision", revision);
             }
 
             String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
-                logger.warn("NO method found in service interface " + interfaceClass.getName());
+                LogHelper.warn(logger, "NO method found in service interface " + interfaceClass.getName());
                 map.put("methods", Constants.ANY_VALUE);
             } else {
                 map.put("methods", StringUtils.join(new HashSet<>(Arrays.asList(methods)), ","));
@@ -289,7 +268,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         appendParameters(map, consumer, Constants.DEFAULT_KEY);
         appendParameters(map, this);
         String prifix = StringUtils.getServiceKey(map);
-        if (methods != null && methods.size() > 0) {
+        if (!CollectionUtils.isEmpty(methods)) {
             for (MethodConfig method : methods) {
                 appendParameters(map, method, method.getName());
                 String retryKey = method.getName() + ".retry";
@@ -346,7 +325,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         URL tmpUrl = new URL("temp", "localhost", 0, map);
         final boolean isJvmRefer;
         if (isInjvm() == null) {
-            if (url != null && url.length() > 0) { //指定URL的情况下，不做本地引用
+            if (!Strings.isNullOrEmpty(url)) { //指定URL的情况下，不做本地引用
                 isJvmRefer = false;
             } else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
                 //默认情况下如果本地有服务暴露，则引用本地服务.
@@ -360,7 +339,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         if (isJvmRefer) {
             URL url = new URL(Constants.LOCAL_PROTOCOL, NetUtils.LOCALHOST, 0, interfaceClass.getName()).addParameters(map);
-            invoker = refprotocol.refer(interfaceClass, url);
+            invoker = refProtocol.refer(interfaceClass, url);
             if (logger.isInfoEnabled()) {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
@@ -370,7 +349,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 if (us != null && us.length > 0) {
                     for (String u : us) {
                         URL url = URL.valueOf(u);
-                        if (url.getPath() == null || url.getPath().length() == 0) {
+                        if (Strings.isNullOrEmpty(url.getPath())) {
                             url = url.setPath(interfaceName);
                         }
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
@@ -382,7 +361,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             } else { // 通过注册中心配置拼装URL
                 List<URL> us = loadRegistries(false);
-                if (us != null && us.size() > 0) {
+                if (!CollectionUtils.isEmpty(us)) {
                     for (URL u : us) {
                         URL monitorUrl = loadMonitor(u);
                         if (monitorUrl != null) {
@@ -391,18 +370,18 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }
-                if (urls == null || urls.size() == 0) {
+                if (CollectionUtils.isEmpty(urls)) {
                     throw new IllegalStateException("No such any registry to reference " + interfaceName + " on the consumer " + NetUtils.getLocalHost() + " use dubbo version " + Version.getVersion() + ", please config <dubbo:registry address=\"...\" /> to your spring config.");
                 }
             }
 
             if (urls.size() == 1) {
-                invoker = refprotocol.refer(interfaceClass, urls.get(0));
+                invoker = refProtocol.refer(interfaceClass, urls.get(0));
             } else {
-                List<Invoker<?>> invokers = new ArrayList<>();
+                List<Invoker<?>> invokers = Lists.newArrayList();
                 URL registryURL = null;
                 for (URL url : urls) {
-                    invokers.add(refprotocol.refer(interfaceClass, url));
+                    invokers.add(refProtocol.refer(interfaceClass, url));
                     if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                         registryURL = url; // 用了最后一个registry url
                     }
@@ -425,11 +404,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             c = true; // default true
         }
         if (c && !invoker.isAvailable()) {
-            throw new IllegalStateException("Failed to check the status of the service " + interfaceName + ". No provider available for the service " + (group == null ? "" : group + "/") + interfaceName + (version == null ? "" : ":" + version) + " from the url " + invoker.getUrl() + " to the consumer " + NetUtils.getLocalHost() + " use dubbo version " + Version.getVersion());
+            throw new IllegalStateException("Failed to check the status of the service " + interfaceName
+                    + ". No provider available for the service " + (group == null ? "" : group + "/")
+                    + interfaceName + (version == null ? "" : ":" + version) + " from the url "
+                    + invoker.getUrl() + " to the consumer " + NetUtils.getLocalHost() + " use dubbo version "
+                    + Version.getVersion());
         }
-        if (logger.isInfoEnabled()) {
-            logger.info("Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
-        }
+        LogHelper.info(logger, "Refer dubbo service " + interfaceClass.getName() + " from url " + invoker.getUrl());
         // 创建服务代理
         return (T) proxyFactory.getProxy(invoker);
     }
@@ -445,12 +426,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (interfaceClass != null) {
             return interfaceClass;
         }
+        ConsumerConfig consumer = getConsumer();
         if (isGeneric()
-                || (getConsumer() != null && getConsumer().isGeneric())) {
+                || (consumer != null && consumer.isGeneric())) {
             return GenericService.class;
         }
         try {
-            if (interfaceName != null && interfaceName.length() > 0) {
+            if (!Strings.isNullOrEmpty(interfaceName)) {
                 this.interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
                         .getContextClassLoader());
             }
@@ -476,7 +458,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     public void setInterface(String interfaceName) {
         this.interfaceName = interfaceName;
-        if (id == null || id.length() == 0) {
+        if (Strings.isNullOrEmpty(id)) {
             id = interfaceName;
         }
     }
