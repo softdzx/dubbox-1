@@ -159,4 +159,10 @@ public class ReferenceConfigCacheTest {
         assertTrue(configCopy.isDestroyMethodRun());
         assertEquals(0, cache.cache.size());
     }
+
+    @Test
+    public void testPrimitive() {
+        System.out.println(Integer.class.isPrimitive());
+        System.out.println(int.class.isPrimitive());
+    }
 }

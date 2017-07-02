@@ -111,7 +111,7 @@ public abstract class AbstractConfig implements Serializable {
                         }
                     }
                 } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
+                    LogHelper.error(logger, e.getMessage(), e);
                 }
             }
         }
@@ -123,15 +123,16 @@ public abstract class AbstractConfig implements Serializable {
         }
         String prefix = "dubbo." + getTagName(config.getClass()) + ".";
         Method[] methods = config.getClass().getMethods();
-        for (Method method : methods) {
-            try {
+        try {
+            for (Method method : methods) {
+
                 String name = method.getName();
                 if (name.length() > 3 && name.startsWith("set") && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 1 && isPrimitive(method.getParameterTypes()[0])) {
                     String property = StringUtils.camelToSplitName(name.substring(3, 4).toLowerCase() + name.substring(4), "-");
 
                     String value = null;
-                    if (config.getId() != null && config.getId().length() > 0) {
+                    if (!Strings.isNullOrEmpty(config.getId())) {
                         String pn = prefix + config.getId() + "." + property;
                         value = System.getProperty(pn);
                         if (!Strings.isNullOrEmpty(value)) {
@@ -158,15 +159,15 @@ public abstract class AbstractConfig implements Serializable {
                         }
                         if (getter != null) {
                             if (getter.invoke(config) == null) {
-                                if (config.getId() != null && config.getId().length() > 0) {
+                                if (!Strings.isNullOrEmpty(config.getId())) {
                                     value = ConfigUtils.getProperty(prefix + config.getId() + "." + property);
                                 }
-                                if (value == null || value.length() == 0) {
+                                if (Strings.isNullOrEmpty(value)) {
                                     value = ConfigUtils.getProperty(prefix + property);
                                 }
-                                if (value == null || value.length() == 0) {
+                                if (Strings.isNullOrEmpty(value)) {
                                     String legacyKey = legacyProperties.get(prefix + property);
-                                    if (legacyKey != null && legacyKey.length() > 0) {
+                                    if (!Strings.isNullOrEmpty(legacyKey)) {
                                         value = convertLegacyValue(legacyKey, ConfigUtils.getProperty(legacyKey));
                                     }
                                 }
@@ -174,13 +175,13 @@ public abstract class AbstractConfig implements Serializable {
                             }
                         }
                     }
-                    if (value != null && value.length() > 0) {
+                    if (!Strings.isNullOrEmpty(value)) {
                         method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));
                     }
                 }
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
             }
+        } catch (Exception e) {
+            LogHelper.warn(logger, e.getMessage(), e);
         }
     }
 
@@ -206,8 +207,8 @@ public abstract class AbstractConfig implements Serializable {
             return;
         }
         Method[] methods = config.getClass().getMethods();
-        for (Method method : methods) {
-            try {
+        try {
+            for (Method method : methods) {
                 String name = method.getName();
                 if ((name.startsWith("get") || name.startsWith("is"))
                         && !"getClass".equals(name)
@@ -229,15 +230,15 @@ public abstract class AbstractConfig implements Serializable {
                         }
                         if (parameter != null && parameter.append()) {
                             String pre = parameters.get(Constants.DEFAULT_KEY + "." + key);
-                            if (pre != null && pre.length() > 0) {
+                            if (!Strings.isNullOrEmpty(pre)) {
                                 str = pre + "," + str;
                             }
                             pre = parameters.get(key);
-                            if (pre != null && pre.length() > 0) {
+                            if (!Strings.isNullOrEmpty(pre)) {
                                 str = pre + "," + str;
                             }
                         }
-                        if (prefix != null && prefix.length() > 0) {
+                        if (!Strings.isNullOrEmpty(prefix)) {
                             key = prefix + "." + key;
                         }
                         parameters.put(key, str);
@@ -249,16 +250,14 @@ public abstract class AbstractConfig implements Serializable {
                         && method.getParameterTypes().length == 0
                         && method.getReturnType() == Map.class) {
                     Map<String, String> map = (Map<String, String>) method.invoke(config);
-                    if (map != null && map.size() > 0) {
-                        String pre = (prefix != null && prefix.length() > 0 ? prefix + "." : "");
-                        for (Map.Entry<String, String> entry : map.entrySet()) {
-                            parameters.put(pre + entry.getKey().replace('-', '.'), entry.getValue());
-                        }
+                    if (!CollectionUtils.isEmpty(map)) {
+                        String pre = !Strings.isNullOrEmpty(prefix) ? prefix + "." : "";
+                        map.forEach((key, value) -> parameters.put(pre + key.replace("-", "."), value));
                     }
                 }
-            } catch (Exception e) {
-                throw new IllegalStateException(e.getMessage(), e);
             }
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage(), e);
         }
     }
 
@@ -406,12 +405,12 @@ public abstract class AbstractConfig implements Serializable {
         }
     }
 
-    protected static void checkProperty(String property, String value, int maxlength, Pattern pattern) {
+    protected static void checkProperty(String property, String value, int maxLength, Pattern pattern) {
         if (Strings.isNullOrEmpty(value)) {
             return;
         }
-        if (value.length() > maxlength) {
-            throw new IllegalStateException("Invalid " + property + "=\"" + value + "\" is longer than " + maxlength);
+        if (value.length() > maxLength) {
+            throw new IllegalStateException("Invalid " + property + "=\"" + value + "\" is longer than " + maxLength);
         }
         if (pattern != null) {
             Matcher matcher = pattern.matcher(value);
@@ -458,13 +457,13 @@ public abstract class AbstractConfig implements Serializable {
                         }
                     }
                 } catch (Exception e) {
-                    logger.warn(e.getMessage(), e);
+                    LogHelper.warn(logger, e.getMessage(), e);
                 }
             }
             buf.append(" />");
             return buf.toString();
         } catch (Throwable t) { // 防御性容错
-            logger.warn(t.getMessage(), t);
+            LogHelper.warn(logger, t.getMessage(), t);
             return super.toString();
         }
     }
