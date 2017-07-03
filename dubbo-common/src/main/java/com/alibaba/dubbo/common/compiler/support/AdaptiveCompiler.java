@@ -7,7 +7,7 @@ import com.google.common.base.Strings;
 
 /**
  * AdaptiveCompiler. (SPI, Singleton, ThreadSafe)
- * 
+ *
  * @author william.liangf
  */
 @Adaptive
@@ -23,7 +23,7 @@ public class AdaptiveCompiler implements Compiler {
         Compiler compiler;
         ExtensionLoader<Compiler> loader = ExtensionLoader.getExtensionLoader(Compiler.class);
         String name = DEFAULT_COMPILER; // copy reference
-        compiler = !Strings.isNullOrEmpty(name) ? loader.getExtension(name):loader.getDefaultExtension();
+        compiler = !Strings.isNullOrEmpty(name) ? loader.getExtension(name) : loader.getDefaultExtension();
         return compiler.compile(code, classLoader);
     }
 

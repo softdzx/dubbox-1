@@ -1,6 +1,7 @@
 package com.alibaba.dubbo.common.bytecode;
 
 import com.alibaba.dubbo.common.utils.ReflectUtils;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -15,12 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-/**
- * ClassGenerator
- *
- * @author qian.lei
- */
 
 public final class ClassGenerator {
 
@@ -126,7 +121,7 @@ public final class ClassGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append(modifier(mod)).append(' ').append(ReflectUtils.getName(type)).append(' ');
         sb.append(name);
-        if (def != null && def.length() > 0) {
+        if (!Strings.isNullOrEmpty(def)) {
             sb.append('=');
             sb.append(def);
         }

@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.beanutil;
 
 import com.alibaba.dubbo.common.logger.Logger;
@@ -70,7 +55,8 @@ public final class JavaBeanSerializeUtil {
         }
     }
 
-    private static JavaBeanDescriptor createDescriptorIfAbsent(Object obj, JavaBeanAccessor accessor, IdentityHashMap<Object, JavaBeanDescriptor> cache) {
+    private static JavaBeanDescriptor createDescriptorIfAbsent(Object obj, JavaBeanAccessor accessor,
+                                                               IdentityHashMap<Object, JavaBeanDescriptor> cache) {
         if (cache.containsKey(obj)) {
             return cache.get(obj);
         } else if (obj instanceof JavaBeanDescriptor) {
@@ -83,7 +69,8 @@ public final class JavaBeanSerializeUtil {
         }
     }
 
-    private static void serializeInternal(JavaBeanDescriptor descriptor, Object obj, JavaBeanAccessor accessor, IdentityHashMap<Object, JavaBeanDescriptor> cache) {
+    private static void serializeInternal(JavaBeanDescriptor descriptor, Object obj, JavaBeanAccessor accessor,
+                                          IdentityHashMap<Object, JavaBeanDescriptor> cache) {
         if (obj == null || descriptor == null) {
             return;
         }
@@ -179,7 +166,8 @@ public final class JavaBeanSerializeUtil {
         return result;
     }
 
-    private static void deserializeInternal(Object result, JavaBeanDescriptor beanDescriptor, ClassLoader loader, IdentityHashMap<JavaBeanDescriptor, Object> cache) {
+    private static void deserializeInternal(Object result, JavaBeanDescriptor beanDescriptor, ClassLoader loader,
+                                            IdentityHashMap<JavaBeanDescriptor, Object> cache) {
         if (beanDescriptor.isEnumType() || beanDescriptor.isClassType() || beanDescriptor.isPrimitiveType()) {
             return;
         }
@@ -303,9 +291,7 @@ public final class JavaBeanSerializeUtil {
             try {
                 constructor.setAccessible(true);
                 return constructor.newInstance(constructorArgs);
-            } catch (InstantiationException | IllegalAccessException e) {
-                LogHelper.warn(logger, e.getMessage(), e);
-            } catch (InvocationTargetException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 LogHelper.warn(logger, e.getMessage(), e);
             }
         }

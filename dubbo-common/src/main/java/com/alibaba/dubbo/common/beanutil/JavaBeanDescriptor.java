@@ -1,10 +1,10 @@
 package com.alibaba.dubbo.common.beanutil;
 
 import com.alibaba.dubbo.common.utils.Assert;
+import com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -55,7 +55,7 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
 
     private int type;
 
-    private Map<Object, Object> properties = new LinkedHashMap<>();
+    private Map<Object, Object> properties = Maps.newLinkedHashMap();
 
     public JavaBeanDescriptor() {
     }
@@ -63,8 +63,7 @@ public final class JavaBeanDescriptor implements Serializable, Iterable<Map.Entr
     public JavaBeanDescriptor(String className, int type) {
         Assert.notNull(className, "class name is empty");
         if (!isValidType(type)) {
-            throw new IllegalArgumentException(
-                    "type [ " + type + " ] is unsupported");
+            throw new IllegalArgumentException("type [ " + type + " ] is unsupported");
         }
 
         this.className = className;

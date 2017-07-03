@@ -1,38 +1,20 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.monitor.dubbo;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.NamedThreadFactory;
 import com.alibaba.dubbo.monitor.Monitor;
 import com.alibaba.dubbo.monitor.MonitorService;
 import com.alibaba.dubbo.rpc.Invoker;
+import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * DubboMonitor
- *
- * @author william.liangf
- */
 public class DubboMonitor implements Monitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DubboMonitor.class);
@@ -42,7 +24,8 @@ public class DubboMonitor implements Monitor {
     /**
      * 定时任务执行器
      */
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3, new NamedThreadFactory("DubboMonitorSendTimer", true));
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(3,
+            new NamedThreadFactory("DubboMonitorSendTimer", true));
 
     /**
      * 统计信息收集定时器
@@ -57,7 +40,7 @@ public class DubboMonitor implements Monitor {
      */
     private final long monitorInterval;
 
-    private final ConcurrentMap<Statistics, AtomicReference<long[]>> statisticsMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Statistics, AtomicReference<long[]>> statisticsMap = Maps.newConcurrentMap();
 
     public DubboMonitor(Invoker<MonitorService> monitorInvoker, MonitorService monitorService) {
         this.monitorInvoker = monitorInvoker;
@@ -69,7 +52,7 @@ public class DubboMonitor implements Monitor {
             try {
                 send();
             } catch (Throwable t) { // 防御性容错
-                logger.error("Unexpected error occur at send statistic, cause: " + t.getMessage(), t);
+                LogHelper.error(logger, "Unexpected error occur at send statistic, cause: " + t.getMessage(), t);
             }
         }, monitorInterval, monitorInterval, TimeUnit.MILLISECONDS);
     }

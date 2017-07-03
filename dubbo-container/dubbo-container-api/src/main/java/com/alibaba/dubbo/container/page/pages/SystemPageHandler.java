@@ -1,26 +1,4 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.container.page.pages;
-
-import java.lang.management.ManagementFactory;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.Version;
@@ -28,72 +6,74 @@ import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.container.page.Menu;
 import com.alibaba.dubbo.container.page.Page;
 import com.alibaba.dubbo.container.page.PageHandler;
+import com.google.common.collect.Lists;
 
-/**
- * SystemPageHandler
- * 
- * @author william.liangf
- */
+import java.lang.management.ManagementFactory;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
 @Menu(name = "System", desc = "Show system environment information.", order = Integer.MAX_VALUE - 10000)
 public class SystemPageHandler implements PageHandler {
 
     public Page handle(URL url) {
-        List<List<String>> rows = new ArrayList<List<String>>();
+        List<List<String>> rows = Lists.newArrayList();
         List<String> row;
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("Version");
         row.add(Version.getVersion(SystemPageHandler.class, "2.0.0"));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = Lists.newArrayList();
         row.add("Host");
         String address = NetUtils.getLocalHost();
         row.add(NetUtils.getHostName(address) + "/" + address);
         rows.add(row);
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("OS");
         row.add(System.getProperty("os.name") + " " + System.getProperty("os.version"));
         rows.add(row);
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("JVM");
         row.add(System.getProperty("java.runtime.name") + " " + System.getProperty("java.runtime.version") + ",<br/>" + System.getProperty("java.vm.name") + " " + System.getProperty("java.vm.version") + " " + System.getProperty("java.vm.info", ""));
         rows.add(row);
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("CPU");
         row.add(System.getProperty("os.arch", "") + ", " + String.valueOf(Runtime.getRuntime().availableProcessors()) + " cores");
         rows.add(row);
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("Locale");
         row.add(Locale.getDefault().toString() + "/" + System.getProperty("file.encoding"));
         rows.add(row);
-        
-        row = new ArrayList<String>();
+
+        row = Lists.newArrayList();
         row.add("Uptime");
         row.add(formatUptime(ManagementFactory.getRuntimeMXBean().getUptime()));
         rows.add(row);
 
-        row = new ArrayList<String>();
+        row = Lists.newArrayList();
         row.add("Time");
         row.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").format(new Date()));
         rows.add(row);
-        
-        return new Page("System", "System", new String[] {
-                "Property", "Value" }, rows);
+
+        return new Page("System", "System", new String[]{
+                "Property", "Value"}, rows);
     }
 
     private static final long SECOND = 1000;
-    
+
     private static final long MINUTE = 60 * SECOND;
-    
+
     private static final long HOUR = 60 * MINUTE;
-    
+
     private static final long DAY = 24 * HOUR;
-    
+
     private String formatUptime(long uptime) {
         StringBuilder buf = new StringBuilder();
         if (uptime > DAY) {

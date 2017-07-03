@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.container.page;
 
 import com.alibaba.dubbo.common.Constants;
@@ -20,7 +5,11 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.StringUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -29,13 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * PageServlet
- *
- * @author william.liangf
- */
 public class PageServlet extends HttpServlet {
 
     private static final long serialVersionUID = -8370312705453328501L;
@@ -44,9 +27,9 @@ public class PageServlet extends HttpServlet {
 
     protected final Random random = new Random();
 
-    protected final Map<String, PageHandler> pages = new ConcurrentHashMap<>();
+    protected final Map<String, PageHandler> pages = Maps.newConcurrentMap();
 
-    protected final List<PageHandler> menus = new ArrayList<>();
+    protected final List<PageHandler> menus = Lists.newArrayList();
 
     private static PageServlet INSTANCE;
 
@@ -63,12 +46,8 @@ public class PageServlet extends HttpServlet {
         super.init();
         INSTANCE = this;
         String config = getServletConfig().getInitParameter("pages");
-        Collection<String> names;
-        if (config != null && config.length() > 0) {
-            names = Arrays.asList(Constants.COMMA_SPLIT_PATTERN.split(config));
-        } else {
-            names = ExtensionLoader.getExtensionLoader(PageHandler.class).getSupportedExtensions();
-        }
+        Collection<String> names = !Strings.isNullOrEmpty(config) ? Arrays.asList(Constants.COMMA_SPLIT_PATTERN.split(config)) :
+                ExtensionLoader.getExtensionLoader(PageHandler.class).getSupportedExtensions();
         for (String name : names) {
             PageHandler handler = ExtensionLoader.getExtensionLoader(PageHandler.class).getExtension(name);
             pages.put(ExtensionLoader.getExtensionLoader(PageHandler.class).getExtensionName(handler), handler);
@@ -93,7 +72,7 @@ public class PageServlet extends HttpServlet {
             PrintWriter writer = response.getWriter();
             String uri = request.getRequestURI();
             boolean isHtml = false;
-            if (uri == null || uri.length() == 0 || "/".equals(uri)) {
+            if (Strings.isNullOrEmpty(uri) || "/".equals(uri)) {
                 uri = "index";
                 isHtml = true;
             } else {
@@ -121,9 +100,9 @@ public class PageServlet extends HttpServlet {
                 try {
                     String query = request.getQueryString();
                     page = pageHandler.handle(URL.valueOf(request.getRequestURL().toString()
-                            + (query == null || query.length() == 0 ? "" : "?" + query)));
+                            + (Strings.isNullOrEmpty(query) ? "" : "?" + query)));
                 } catch (Throwable t) {
-                    logger.warn(t.getMessage(), t);
+                    LogHelper.warn(logger, t.getMessage(), t);
                     String msg = t.getMessage();
                     if (msg == null) {
                         msg = StringUtils.toString(t);
@@ -149,9 +128,10 @@ public class PageServlet extends HttpServlet {
                     }
                 }
                 if (page != null) {
+                    List<List<String>> rows = page.getRows();
                     if (isHtml) {
                         String nav = page.getNavigation();
-                        if (nav == null || nav.length() == 0) {
+                        if (Strings.isNullOrEmpty(nav)) {
                             nav = ExtensionLoader.getExtensionLoader(PageHandler.class).getExtensionName(pageHandler);
                             nav = nav.substring(0, 1).toUpperCase() + nav.substring(1);
                         }
@@ -160,10 +140,10 @@ public class PageServlet extends HttpServlet {
                         }
                         writeMenu(request, writer, nav);
                         writeTable(writer, page.getTitle(), page.getColumns(),
-                                page.getRows());
+                                rows);
                     } else {
-                        if (page.getRows().size() > 0 && page.getRows().get(0).size() > 0) {
-                            writer.println(page.getRows().get(0).get(0));
+                        if (rows.size() > 0 && rows.get(0).size() > 0) {
+                            writer.println(rows.get(0).get(0));
                         }
                     }
                 }

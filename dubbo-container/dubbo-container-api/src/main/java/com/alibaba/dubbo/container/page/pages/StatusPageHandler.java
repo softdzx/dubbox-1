@@ -1,25 +1,4 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.container.page.pages;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
@@ -29,25 +8,27 @@ import com.alibaba.dubbo.common.status.support.StatusUtils;
 import com.alibaba.dubbo.container.page.Menu;
 import com.alibaba.dubbo.container.page.Page;
 import com.alibaba.dubbo.container.page.PageHandler;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-/**
- * StatusPageHandler
- * 
- * @author william.liangf
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 @Menu(name = "Status", desc = "Show system status.", order = Integer.MAX_VALUE - 12000)
 public class StatusPageHandler implements PageHandler {
 
     public Page handle(URL url) {
-        List<List<String>> rows = new ArrayList<List<String>>();
+        List<List<String>> rows = Lists.newArrayList();
         Set<String> names = ExtensionLoader.getExtensionLoader(StatusChecker.class).getSupportedExtensions();
-        Map<String, Status> statuses = new HashMap<String, Status>();
+        Map<String, Status> statuses = Maps.newHashMap();
         for (String name : names) {
             StatusChecker checker = ExtensionLoader.getExtensionLoader(StatusChecker.class).getExtension(name);
-            List<String> row = new ArrayList<String>();
+            List<String> row = Lists.newArrayList();
             row.add(name);
             Status status = checker.check();
-            if (status != null && ! Status.Level.UNKNOWN.equals(status.getLevel())) {
+            if (status != null && !Status.Level.UNKNOWN.equals(status.getLevel())) {
                 statuses.put(name, status);
                 row.add(getLevelHtml(status.getLevel()));
                 row.add(status.getMessage());
@@ -58,12 +39,13 @@ public class StatusPageHandler implements PageHandler {
         if ("status".equals(url.getPath())) {
             return new Page("", "", "", status.getLevel().toString());
         } else {
-            List<String> row = new ArrayList<String>();
+            List<String> row = Lists.newArrayList();
             row.add("summary");
             row.add(getLevelHtml(status.getLevel()));
             row.add("<a href=\"/status\" target=\"_blank\">summary</a>");
             rows.add(row);
-            return new Page("Status (<a href=\"/status\" target=\"_blank\">summary</a>)", "Status", new String[] {"Name", "Status", "Description"}, rows);
+            return new Page("Status (<a href=\"/status\" target=\"_blank\">summary</a>)", "Status",
+                    new String[]{"Name", "Status", "Description"}, rows);
         }
     }
 

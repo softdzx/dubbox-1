@@ -1,26 +1,15 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.validation.support.jvalidation;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.validation.Validator;
+import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import javassist.*;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
@@ -33,13 +22,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
-/**
- * JValidator
- *
- * @author william.liangf
- */
 public class JValidator implements Validator {
 
     private static final Logger logger = LoggerFactory.getLogger(JValidator.class);
@@ -52,12 +39,8 @@ public class JValidator implements Validator {
     public JValidator(URL url) {
         this.clazz = ReflectUtils.forName(url.getServiceInterface());
         String jvalidation = url.getParameter("jvalidation");
-        ValidatorFactory factory;
-        if (jvalidation != null && jvalidation.length() > 0) {
-            factory = Validation.byProvider((Class) ReflectUtils.forName(jvalidation)).configure().buildValidatorFactory();
-        } else {
-            factory = Validation.buildDefaultValidatorFactory();
-        }
+        ValidatorFactory factory = !Strings.isNullOrEmpty(jvalidation) ? Validation.byProvider((Class) ReflectUtils
+                .forName(jvalidation)).configure().buildValidatorFactory() : Validation.buildDefaultValidatorFactory();
         this.validator = factory.getValidator();
     }
 
@@ -68,7 +51,7 @@ public class JValidator implements Validator {
             methodClass = Class.forName(methodClassName, false, Thread.currentThread().getContextClassLoader());
         } catch (ClassNotFoundException ignore) {
         }
-        Set<ConstraintViolation<?>> violations = new HashSet<>();
+        Set<ConstraintViolation<?>> violations = Sets.newHashSet();
         Method method = clazz.getMethod(methodName, parameterTypes);
         Object parameterBean = getMethodParameterBean(clazz, method, arguments);
         if (parameterBean != null) {
@@ -82,7 +65,8 @@ public class JValidator implements Validator {
             validate(violations, arg, clazz, methodClass);
         }
         if (violations.size() > 0) {
-            throw new ConstraintViolationException("Failed to validate service: " + clazz.getName() + ", method: " + methodName + ", cause: " + violations, violations);
+            throw new ConstraintViolationException("Failed to validate service: " + clazz.getName() + ", method: "
+                    + methodName + ", cause: " + violations, violations);
         }
     }
 
@@ -168,7 +152,8 @@ public class JValidator implements Validator {
                         }
                     }
                     String fieldName = method.getName() + "Argument" + i;
-                    CtField ctField = CtField.make("public " + type.getCanonicalName() + " " + fieldName + ";", pool.getCtClass(parameterClassName));
+                    CtField ctField = CtField.make("public " + type.getCanonicalName() + " " + fieldName + ";",
+                            pool.getCtClass(parameterClassName));
                     ctField.getFieldInfo().addAttribute(attribute);
                     ctClass.addField(ctField);
                 }
@@ -181,14 +166,14 @@ public class JValidator implements Validator {
             }
             return parameterBean;
         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+            LogHelper.warn(logger, e.getMessage(), e);
             return null;
         }
     }
 
     private static boolean hasConstraintParameter(Method method) {
         Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-        if (parameterAnnotations != null && parameterAnnotations.length > 0) {
+        if (!CollectionUtils.isEmpty(parameterAnnotations)) {
             for (Annotation[] annotations : parameterAnnotations) {
                 for (Annotation annotation : annotations) {
                     if (annotation.annotationType().isAnnotationPresent(Constraint.class)) {

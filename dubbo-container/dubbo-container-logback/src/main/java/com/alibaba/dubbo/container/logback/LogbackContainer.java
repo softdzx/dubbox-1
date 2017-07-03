@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.container.logback;
 
 import ch.qos.logback.classic.Level;
@@ -25,6 +10,7 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 import com.alibaba.dubbo.common.utils.ConfigUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
 import com.alibaba.dubbo.container.Container;
+import com.google.common.base.Strings;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -34,19 +20,19 @@ import org.slf4j.LoggerFactory;
  */
 public class LogbackContainer implements Container {
 
-    public static final String LOGBACK_FILE = "dubbo.logback.file";
+    private static final String LOGBACK_FILE = "dubbo.logback.file";
 
-    public static final String LOGBACK_LEVEL = "dubbo.logback.level";
+    private static final String LOGBACK_LEVEL = "dubbo.logback.level";
 
-    public static final String LOGBACK_MAX_HISTORY = "dubbo.logback.maxhistory";
+    private static final String LOGBACK_MAX_HISTORY = "dubbo.logback.maxhistory";
 
-    public static final String DEFAULT_LOGBACK_LEVEL = "ERROR";
+    private static final String DEFAULT_LOGBACK_LEVEL = "ERROR";
 
     public void start() {
         String file = ConfigUtils.getProperty(LOGBACK_FILE);
-        if (file != null && file.length() > 0) {
+        if (!Strings.isNullOrEmpty(file)) {
             String level = ConfigUtils.getProperty(LOGBACK_LEVEL);
-            if (level == null || level.length() == 0) {
+            if (Strings.isNullOrEmpty(level)) {
                 level = DEFAULT_LOGBACK_LEVEL;
             }
             // maxHistory=0 Infinite history

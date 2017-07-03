@@ -1,28 +1,15 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.container;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.common.utils.ConfigUtils;
+import com.alibaba.dubbo.common.utils.LogHelper;
+import com.google.common.collect.Lists;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -46,12 +33,12 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            if (args == null || args.length == 0) {
+            if (CollectionUtils.isEmpty(args)) {
                 String config = ConfigUtils.getProperty(CONTAINER_KEY, loader.getDefaultExtensionName());
                 args = Constants.COMMA_SPLIT_PATTERN.split(config);
             }
 
-            final List<Container> containers = new ArrayList<>();
+            final List<Container> containers = Lists.newArrayList();
             for (String arg : args) {
                 containers.add(loader.getExtension(arg));
             }
@@ -62,9 +49,9 @@ public class Main {
                     for (Container container : containers) {
                         try {
                             container.stop();
-                            logger.info("Dubbo " + container.getClass().getSimpleName() + " stopped!");
+                            LogHelper.info(logger, "Dubbo " + container.getClass().getSimpleName() + " stopped!");
                         } catch (Throwable t) {
-                            logger.error(t.getMessage(), t);
+                            LogHelper.error(logger, t.getMessage(), t);
                         }
                         synchronized (Main.class) {
                             running = false;
@@ -76,12 +63,12 @@ public class Main {
 
             for (Container container : containers) {
                 container.start();
-                logger.info("Dubbo " + container.getClass().getSimpleName() + " started!");
+                LogHelper.info(logger, "Dubbo " + container.getClass().getSimpleName() + " started!");
             }
             System.out.println(new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]").format(new Date()) + " Dubbo service server started!");
         } catch (RuntimeException e) {
             e.printStackTrace();
-            logger.error(e.getMessage(), e);
+            LogHelper.error(logger, e.getMessage(), e);
             System.exit(1);
         }
         synchronized (Main.class) {

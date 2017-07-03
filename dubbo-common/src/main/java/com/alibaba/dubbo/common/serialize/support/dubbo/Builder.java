@@ -1,32 +1,4 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.common.serialize.support.dubbo;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
 
 import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.io.UnsafeByteArrayInputStream;
@@ -39,15 +11,21 @@ import com.alibaba.dubbo.common.utils.ClassHelper;
 import com.alibaba.dubbo.common.utils.IOUtils;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-/**
- * Builder.
- *
- * @param <T> type.
- * @author qian.lei
- */
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
 
-@SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryBoxing"})
 public abstract class Builder<T> implements GenericDataFlags {
     // Must be protected. by qian.lei
     protected static Logger logger = LoggerFactory.getLogger(Builder.class);
@@ -56,8 +34,8 @@ public abstract class Builder<T> implements GenericDataFlags {
 
     private static final String BUILDER_CLASS_NAME = Builder.class.getName();
 
-    private static final Map<Class<?>, Builder<?>> BuilderMap = new ConcurrentHashMap<Class<?>, Builder<?>>();
-    private static final Map<Class<?>, Builder<?>> nonSerializableBuilderMap = new ConcurrentHashMap<Class<?>, Builder<?>>();
+    private static final Map<Class<?>, Builder<?>> BuilderMap = Maps.newConcurrentMap();
+    private static final Map<Class<?>, Builder<?>> nonSerializableBuilderMap = Maps.newConcurrentMap();
 
     private static final String FIELD_CONFIG_SUFFIX = ".fc";
 
@@ -70,9 +48,9 @@ public abstract class Builder<T> implements GenericDataFlags {
     private static final Comparator<Constructor> CC = Comparator.comparingInt(o -> o.getParameterTypes().length);
 
     // class-descriptor mapper
-    private static final List<String> mDescList = new ArrayList<>();
+    private static final List<String> mDescList = Lists.newArrayList();
 
-    private static final Map<String, Integer> mDescMap = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> mDescMap = Maps.newConcurrentMap();
 
     public static ClassDescriptorMapper DEFAULT_CLASS_DESCRIPTOR_MAPPER = new ClassDescriptorMapper() {
         public String getDescriptor(int index) {
@@ -176,8 +154,10 @@ public abstract class Builder<T> implements GenericDataFlags {
         int ix = cn.indexOf(']');
         String s1 = cn.substring(0, ix), s2 = cn.substring(ix); // if name='int[][]' then s1='int[', s2='][]'
 
-        StringBuilder cwt = new StringBuilder("public void writeTo(Object obj, ").append(GenericObjectOutput.class.getName()).append(" out) throws java.io.IOException{"); // writeTo code.
-        StringBuilder cpf = new StringBuilder("public Object parseFrom(").append(GenericObjectInput.class.getName()).append(" in) throws java.io.IOException{"); // parseFrom code.
+        StringBuilder cwt = new StringBuilder("public void writeTo(Object obj, ").append(GenericObjectOutput.class.getName())
+                .append(" out) throws java.io.IOException{"); // writeTo code.
+        StringBuilder cpf = new StringBuilder("public Object parseFrom(").append(GenericObjectInput.class.getName())
+                .append(" in) throws java.io.IOException{"); // parseFrom code.
 
         cwt.append("if( $1 == null ){ $2.write0(OBJECT_NULL); return; }");
         cwt.append(cn).append(" v = (").append(cn).append(")$1; int len = v.length; $2.write0(OBJECT_VALUES); $2.writeUInt(len); for(int i=0;i<len;i++){ ");
@@ -334,7 +314,7 @@ public abstract class Builder<T> implements GenericDataFlags {
             }
         } else {
             Class<?> t = c;
-            List<Field> fl = new ArrayList<Field>();
+            List<Field> fl = Lists.newArrayList();
             do {
                 fs = t.getDeclaredFields();
                 for (Field tf : fs) {
@@ -410,7 +390,7 @@ public abstract class Builder<T> implements GenericDataFlags {
 
         // get bean-style property metadata.
         Map<String, PropertyMetadata> pms = propertyMetadatas(c);
-        List<Builder<?>> builders = new ArrayList<Builder<?>>(fs.length);
+        List<Builder<?>> builders =Lists.newArrayListWithCapacity(fs.length);
         String fn, ftn; // field name, field type name.
         Class<?> ft; // field type.
         boolean da; // direct access.
@@ -624,8 +604,8 @@ public abstract class Builder<T> implements GenericDataFlags {
     }
 
     private static Map<String, PropertyMetadata> propertyMetadatas(Class<?> c) {
-        Map<String, Method> mm = new HashMap<String, Method>(); // method map.
-        Map<String, PropertyMetadata> ret = new HashMap<String, PropertyMetadata>(); // property metadata map.
+        Map<String, Method> mm = Maps.newHashMap(); // method map.
+        Map<String, PropertyMetadata> ret =  Maps.newHashMap(); // property metadata map.
 
         // All public method.
         for (Method m : c.getMethods()) {
