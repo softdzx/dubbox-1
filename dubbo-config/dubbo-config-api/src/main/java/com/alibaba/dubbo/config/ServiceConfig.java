@@ -190,7 +190,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             generic = Boolean.FALSE.toString();
         }
         if (local != null) {
-            if (local == "true") {
+            if ("true".equalsIgnoreCase(local)) {
                 local = interfaceName + "Local";
             }
             Class<?> localClass;
