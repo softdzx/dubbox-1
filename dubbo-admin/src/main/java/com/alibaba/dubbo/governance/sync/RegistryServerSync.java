@@ -20,9 +20,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ding.lid
- */
 public class RegistryServerSync implements InitializingBean, DisposableBean, NotifyListener {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistryServerSync.class);

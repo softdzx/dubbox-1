@@ -1,19 +1,10 @@
-/*
- * Copyright 1999-2101 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.governance.web.sysinfo.module.screen;
+
+import com.alibaba.dubbo.common.logger.Level;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.governance.web.common.module.screen.Restful;
+import com.alibaba.dubbo.registry.common.domain.User;
+import com.google.common.base.Strings;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,14 +14,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
-import com.alibaba.dubbo.common.logger.Level;
-import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.governance.web.common.module.screen.Restful;
-import com.alibaba.dubbo.registry.common.domain.User;
-
-/**
- * @author tony.chenl
- */
 public class Logs extends Restful {
 
     private static final int SHOW_LOG_LENGTH = 30000;
@@ -68,15 +51,15 @@ public class Logs extends Restful {
         context.put("modified", modified);
         context.put("content", content);
     }
-    
+
     public boolean change(Map<String, Object> context) throws Exception {
-        String contextLevel = (String)context.get("level");
-        if (contextLevel == null || contextLevel.length() == 0) {
+        String contextLevel = (String) context.get("level");
+        if (Strings.isNullOrEmpty(contextLevel)) {
             context.put("message", getMessage("MissRequestParameters", "level"));
             return false;
         }
-        if (! User.ROOT.equals(role)) {
-           context.put("message", getMessage("HaveNoRootPrivilege"));
+        if (!User.ROOT.equals(role)) {
+            context.put("message", getMessage("HaveNoRootPrivilege"));
             return false;
         }
         Level level = Level.valueOf(contextLevel);

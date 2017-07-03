@@ -1,48 +1,31 @@
-/**
- * Project: dubbo.registry.console-2.1.0-SNAPSHOT
- * 
- * File Created at Sep 5, 2011
- * $Id: RestfuleUrlRewriter.java 181192 2012-06-21 05:05:47Z tony.chenl $
- * 
- * Copyright 1999-2100 Alibaba.com Corporation Limited.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.governance.web.common.interceptor;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.alibaba.citrus.service.requestcontext.rewrite.RewriteSubstitutionContext;
 import com.alibaba.citrus.service.requestcontext.rewrite.RewriteSubstitutionHandler;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.LogHelper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Restful URL Rewrite成 WebX的URL。
- * 
+ *
  * @author ding.lid
  */
 public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
 
-    private static final Logger              logger              = LoggerFactory.getLogger(RestfuleUrlRewriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestfuleUrlRewriter.class);
 
     private static final Map<String, String> pl2single;
-    private static final Set<String>         appParameter;
+    private static final Set<String> appParameter;
+
     static {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = Maps.newHashMap();
 
         map.put("services", "service");
         map.put("users", "user");
@@ -53,7 +36,7 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
         map.put("comsumers", "comsumer");
 
         pl2single = Collections.unmodifiableMap(map);
-        Set<String> set = new HashSet<String>();
+        Set<String> set = Sets.newHashSet();
 
         set.add("_path");
         set.add("currentPage");
@@ -64,17 +47,17 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
         appParameter = Collections.unmodifiableSet(set);
     }
 
-    private final static String              METHOD_KEY          = "_method";                                         // show,
-    private final static String              TYPE_KEY            = "_type";
-    private final static String              ID_KEY              = "id";
-    private final static String              PAGES_KEY           = "currentPage";
-    private final static String              PATH_KEY            = "_path";
+    private final static String METHOD_KEY = "_method";                                         // show,
+    private final static String TYPE_KEY = "_type";
+    private final static String ID_KEY = "id";
+    private final static String PAGES_KEY = "currentPage";
+    private final static String PATH_KEY = "_path";
 
-    private final static Pattern             SLASH_PATTERN       = Pattern.compile("/+");
-    private final static Pattern             NUM_PATTERN         = Pattern.compile("\\d+");
-    private final static Pattern             MULTI_NUM_PATTERN   = Pattern.compile("[+\\d]+");
-    private final static Pattern             PAGES_SPLIT_PATTERN = Pattern.compile("/+pages/+");
-    private final static Pattern             PAGES_PATTERN       = Pattern.compile(".*/+pages/+\\d+$");
+    private final static Pattern SLASH_PATTERN = Pattern.compile("/+");
+    private final static Pattern NUM_PATTERN = Pattern.compile("\\d+");
+    private final static Pattern MULTI_NUM_PATTERN = Pattern.compile("[+\\d]+");
+    private final static Pattern PAGES_SPLIT_PATTERN = Pattern.compile("/+pages/+");
+    private final static Pattern PAGES_PATTERN = Pattern.compile(".*/+pages/+\\d+$");
 
     public void postSubstitution(RewriteSubstitutionContext context) {
         final String oldPath = context.getPath();
@@ -83,7 +66,7 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
             path = path.substring(1);
         }
 
-        Map<String, String> param = new HashMap<String, String>();
+        Map<String, String> param = Maps.newHashMap();
 
         // 处理分页
         if (PAGES_PATTERN.matcher(path).matches()) {
@@ -96,28 +79,29 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
         }
         List<String> temp = Arrays.asList(SLASH_PATTERN.split(path));
         //兼容2.0.x注册中心的shell风格url 如：http://root:hello1234@127.0.0.1:8080/status/dubbo.test.api.HelloService:1.1
-        if("status".equals(temp.get(0))&&temp.size()>1){
+        if ("status".equals(temp.get(0)) && temp.size() > 1) {
             context.setPath("servicestatus");
             return;
         }
         //兼容包含group的path
         String[] split = (String[]) temp.toArray();
-        
-        if(temp.size()>2&&temp.contains("services")){
-            List<String> parts = new ArrayList<String>();
+
+        if (temp.size() > 2 && temp.contains("services")) {
+            List<String> parts = Lists.newArrayList();
             parts.addAll(temp);
-            for(int i = 0;i<temp.size();i++){
-                if ("services".equals(temp.get(i)) && i < (temp.size() - 1) && (!temp.get(i + 1).contains("."))&&(!temp.get(i + 1).matches("\\d+"))) {
+            for (int i = 0; i < temp.size(); i++) {
+                if ("services".equals(temp.get(i)) && i < (temp.size() - 1) && (!temp.get(i + 1).contains("."))
+                        && (!temp.get(i + 1).matches("\\d+"))) {
                     String group = parts.get(i + 1);
                     String service = parts.get(i + 2);
                     parts.remove(i + 1);
-                    parts.set(i+1, group + "/" + service);
+                    parts.set(i + 1, group + "/" + service);
                     break;
                 }
             }
             split = parts.toArray(new String[parts.size()]);
         }
-      
+
         int index = split.length;
         // module/action
         if (split.length < 2) return;
@@ -169,20 +153,20 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
         }
 
         String method = param.get(METHOD_KEY);
-        
+
         String defaultRedirect = null;
-        if(method == null || method.equals("index")){
+        if (method == null || method.equals("index")) {
             defaultRedirect = oldPath;
-        }else{
+        } else {
             defaultRedirect = oldPath.split("/" + method)[0];
         }
         String id = param.get(ID_KEY);
-        if(id != null){
+        if (id != null) {
             int i = defaultRedirect.lastIndexOf("/");
-            defaultRedirect = defaultRedirect.substring(0,i);
+            defaultRedirect = defaultRedirect.substring(0, i);
         }
         context.getParameters().setString("defaultRedirect", defaultRedirect);
-        
+
         final String module = split[0];
         context.setPath("/" + module + "/" + type + ".htm");
 
@@ -197,9 +181,6 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
             }
             context.getParameters().setString(key, entry.getValue());
         }
-
-        if (logger.isInfoEnabled()) {
-            logger.info("REWRITE restful uri " + oldPath + " to uri " + module + "/" + type + ".htm?" + param);
-        }
+        LogHelper.info(logger, "REWRITE restful uri " + oldPath + " to uri " + module + "/" + type + ".htm?" + param);
     }
 }

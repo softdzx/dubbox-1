@@ -1,11 +1,14 @@
-/*
- * Copyright 2011 Alibaba.com All right reserved. This software is the
- * confidential and proprietary information of Alibaba.com ("Confidential
- * Information"). You shall not disclose such Confidential Information and shall
- * use it only in accordance with the terms of the license agreement you entered
- * into with Alibaba.com.
- */
 package com.alibaba.dubbo.governance.web.common.module.screen;
+
+import com.alibaba.dubbo.common.utils.CompatibleTypeUtils;
+import com.alibaba.dubbo.governance.biz.common.i18n.MessageResourceService;
+import com.alibaba.dubbo.governance.web.common.pulltool.RootContextPath;
+import com.alibaba.dubbo.governance.web.util.WebConstants;
+import com.alibaba.dubbo.registry.common.domain.User;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -13,16 +16,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.alibaba.dubbo.common.utils.CompatibleTypeUtils;
-import com.alibaba.dubbo.governance.biz.common.i18n.MessageResourceService;
-import com.alibaba.dubbo.governance.web.common.pulltool.RootContextPath;
-import com.alibaba.dubbo.governance.web.util.WebConstants;
-import com.alibaba.dubbo.registry.common.domain.User;
 
 /**
  * BaseScreen
@@ -69,13 +62,9 @@ public abstract class Restful {
         context.put("rootContextPath", new RootContextPath(contextPath));
 
         // 分析Method
-        if (method == null || method.length() == 0) {
+        if (Strings.isNullOrEmpty(method)) {
             String id = (String) context.get("id");
-            if (id == null || id.length() == 0) {
-                method = "index";
-            } else {
-                method = "show";
-            }
+            method = Strings.isNullOrEmpty(id) ? "index" : "show";
         }
         if ("index".equals(method)) {
             if ("post".equalsIgnoreCase(httpMethod)) {

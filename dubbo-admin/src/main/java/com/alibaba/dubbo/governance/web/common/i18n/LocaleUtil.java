@@ -3,7 +3,7 @@ package com.alibaba.dubbo.governance.web.common.i18n;
 import java.util.Locale;
 
 public class LocaleUtil {
-    private static ThreadLocal<Locale> userLocale = new ThreadLocal<Locale>();
+    private static ThreadLocal<Locale> userLocale = new ThreadLocal<>();
 
     public static void setLocale(Locale locale) {
         userLocale.set(locale);

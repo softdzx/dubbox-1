@@ -21,7 +21,7 @@ public class DubboUser implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final ThreadLocal<User> userHolder = new ThreadLocal<User>();
+	private static final ThreadLocal<User> userHolder = new ThreadLocal<>();
 
 	private DubboUser() {
 	}

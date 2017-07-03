@@ -1,29 +1,9 @@
-/**
- * Project: dubbo.registry-1.1.0-SNAPSHOT
- * 
- * File Created at 2010-4-15
- * $Id: ProviderService.java 182143 2012-06-27 03:25:50Z tony.chenl $
- * 
- * Copyright 2008 Alibaba.com Croporation Limited.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.governance.service;
 
 import java.util.List;
 
 import com.alibaba.dubbo.registry.common.domain.Provider;
 
-/**
- * ProviderService
- * 
- * @author william.liangf
- */
 public interface ProviderService {
     
     void create(Provider provider);

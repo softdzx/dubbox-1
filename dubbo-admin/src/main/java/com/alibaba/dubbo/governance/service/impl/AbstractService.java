@@ -10,11 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * IbatisDAO
- *
- * @author william.liangf
- */
 public class AbstractService {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractService.class);

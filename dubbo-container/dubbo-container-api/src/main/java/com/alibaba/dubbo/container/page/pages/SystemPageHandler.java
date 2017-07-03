@@ -39,7 +39,9 @@ public class SystemPageHandler implements PageHandler {
 
         row = Lists.newArrayList();
         row.add("JVM");
-        row.add(System.getProperty("java.runtime.name") + " " + System.getProperty("java.runtime.version") + ",<br/>" + System.getProperty("java.vm.name") + " " + System.getProperty("java.vm.version") + " " + System.getProperty("java.vm.info", ""));
+        row.add(System.getProperty("java.runtime.name") + " " + System.getProperty("java.runtime.version") + ",<br/>"
+                + System.getProperty("java.vm.name") + " " + System.getProperty("java.vm.version") + " "
+                + System.getProperty("java.vm.info", ""));
         rows.add(row);
 
         row = Lists.newArrayList();

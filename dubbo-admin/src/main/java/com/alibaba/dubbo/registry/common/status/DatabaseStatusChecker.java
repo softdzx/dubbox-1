@@ -1,18 +1,3 @@
-/**
- * Project: dubbo.registry.server-1.1.0-SNAPSHOT
- * 
- * File Created at 2009-12-27
- * $Id: DatabaseStatusChecker.java 181192 2012-06-21 05:05:47Z tony.chenl $
- * 
- * Copyright 2008 Alibaba.com Croporation Limited.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.registry.common.status;
 
 import java.sql.Connection;
@@ -28,11 +13,6 @@ import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.status.Status;
 import com.alibaba.dubbo.common.status.StatusChecker;
 
-/**
- * DatabaseStatus
- * 
- * @author william.liangf
- */
 public class DatabaseStatusChecker implements StatusChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseStatusChecker.class);
