@@ -74,10 +74,11 @@ public abstract class AbstractRegistry implements Registry {
         File file = null;
         if (ConfigUtils.isNotEmpty(filename)) {
             file = new File(filename);
-            if (!file.exists() && file.getParentFile() != null && !file.getParentFile().exists()) {
-                if (!file.getParentFile().mkdirs()) {
+            File parentFile = file.getParentFile();
+            if (!file.exists() && parentFile != null && !parentFile.exists()) {
+                if (!parentFile.mkdirs()) {
                     throw new IllegalArgumentException("Invalid registry store file " + file +
-                            ", cause: Failed to create directory " + file.getParentFile() + "!");
+                            ", cause: Failed to create directory " + parentFile + "!");
                 }
             }
         }
@@ -369,8 +370,12 @@ public abstract class AbstractRegistry implements Registry {
         for (URL u : urls) {
             if (UrlUtils.isMatch(url, u)) {
                 String category = u.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);
+//                List<URL> categoryList = result.putIfAbsent(category, Lists.newArrayList());
                 List<URL> categoryList = result.get(category);
-                result.putIfAbsent(category, Lists.newArrayList());
+                if (categoryList == null) {
+                    categoryList = Lists.newArrayList();
+                    result.put(category, categoryList);
+                }
                 categoryList.add(u);
             }
         }
@@ -446,7 +451,7 @@ public abstract class AbstractRegistry implements Registry {
                         unsubscribe(url, listener);
                         LogHelper.info(logger, "Destroy unSubscribe url " + url);
                     } catch (Throwable t) {
-                        LogHelper.warn(logger, "Failed to unSubscribe url " + url  + " to registry " + getUrl() +
+                        LogHelper.warn(logger, "Failed to unSubscribe url " + url + " to registry " + getUrl() +
                                 " on destroy, cause: " + t.getMessage(), t);
                     }
                 }
