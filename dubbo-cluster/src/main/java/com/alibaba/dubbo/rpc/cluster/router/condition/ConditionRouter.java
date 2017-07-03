@@ -1,18 +1,3 @@
-/*
- * Copyright 1999-2012 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.rpc.cluster.router.condition;
 
 import com.alibaba.dubbo.common.Constants;
@@ -20,6 +5,7 @@ import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.common.utils.UrlUtils;
 import com.alibaba.dubbo.rpc.Invocation;
@@ -29,17 +15,15 @@ import com.alibaba.dubbo.rpc.cluster.Router;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * ConditionRouter
- *
- * @author william.liangf
- */
 public class ConditionRouter implements Router, Comparable<Router> {
 
     private static final Logger logger = LoggerFactory.getLogger(ConditionRouter.class);
@@ -60,7 +44,7 @@ public class ConditionRouter implements Router, Comparable<Router> {
         this.force = url.getParameter(Constants.FORCE_KEY, false);
         try {
             String rule = url.getParameterAndDecoded(Constants.RULE_KEY);
-            if (rule == null || rule.trim().length() == 0) {
+            if (Strings.isNullOrEmpty(rule)) {
                 throw new IllegalArgumentException("Illegal route rule!");
             }
             rule = rule.replace("consumer.", "").replace("provider.", "");
@@ -88,7 +72,8 @@ public class ConditionRouter implements Router, Comparable<Router> {
             }
             List<Invoker<T>> result = Lists.newArrayList();
             if (thenCondition == null) {
-                logger.warn("The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey());
+                LogHelper.warn(logger, "The current consumer in the service blacklist. consumer: " + NetUtils.getLocalHost()
+                        + ", service: " + url.getServiceKey());
                 return result;
             }
             for (Invoker<T> invoker : invokers) {
@@ -99,11 +84,13 @@ public class ConditionRouter implements Router, Comparable<Router> {
             if (result.size() > 0) {
                 return result;
             } else if (force) {
-                logger.warn("The route result is empty and force execute. consumer: " + NetUtils.getLocalHost() + ", service: " + url.getServiceKey() + ", router: " + url.getParameterAndDecoded(Constants.RULE_KEY));
+                LogHelper.warn(logger, "The route result is empty and force execute. consumer: " + NetUtils.getLocalHost()
+                        + ", service: " + url.getServiceKey() + ", router: " + url.getParameterAndDecoded(Constants.RULE_KEY));
                 return result;
             }
         } catch (Throwable t) {
-            logger.error("Failed to execute condition router rule: " + getUrl() + ", invokers: " + invokers + ", cause: " + t.getMessage(), t);
+            LogHelper.error(logger, "Failed to execute condition router rule: " + getUrl() + ", invokers: "
+                    + invokers + ", cause: " + t.getMessage(), t);
         }
         return invokers;
     }
@@ -157,7 +144,7 @@ public class ConditionRouter implements Router, Comparable<Router> {
             String separator = matcher.group(1);
             String content = matcher.group(2);
             // 表达式开始
-            if (separator == null || separator.length() == 0) {
+            if (Strings.isNullOrEmpty(separator)) {
                 pair = new MatchPair();
                 condition.put(content, pair);
             }
@@ -171,47 +158,40 @@ public class ConditionRouter implements Router, Comparable<Router> {
                 }
             }
             // KV的Value部分开始
-            else if ("=".equals(separator)) {
-                if (pair == null)
-                    throw new ParseException("Illegal route rule \""
-                            + rule + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".", matcher.start());
-
-                values = pair.matches;
-                values.add(content);
-            }
-            // KV的Value部分开始
-            else if ("!=".equals(separator)) {
-                if (pair == null)
-                    throw new ParseException("Illegal route rule \""
-                            + rule + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".", matcher.start());
-
-                values = pair.mismatches;
-                values.add(content);
-            }
-            // KV的Value部分的多个条目
-            else if (",".equals(separator)) { // 如果为逗号表示
-                if (values == null || values.size() == 0)
-                    throw new ParseException("Illegal route rule \""
-                            + rule + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".", matcher.start());
-                values.add(content);
-            } else {
-                throw new ParseException("Illegal route rule \"" + rule
-                        + "\", The error char '" + separator + "' at index "
-                        + matcher.start() + " before \"" + content + "\".", matcher.start());
+            else {
+                if ("=".equals(separator)) {
+                    if (pair == null)
+                        throw new ParseException("Illegal route rule \"" + rule + "\", The error char '" + separator
+                                + "' at index " + matcher.start() + " before \"" + content + "\".", matcher.start());
+                    values = pair.matches;
+                    values.add(content);
+                }
+                // KV的Value部分开始
+                else if ("!=".equals(separator)) {
+                    if (pair == null)
+                        throw new ParseException("Illegal route rule \"" + rule + "\", The error char '" + separator
+                                + "' at index " + matcher.start() + " before \"" + content + "\".", matcher.start());
+                    values = pair.mismatches;
+                    values.add(content);
+                }
+                // KV的Value部分的多个条目
+                else if (",".equals(separator)) { // 如果为逗号表示
+                    if (CollectionUtils.isEmpty(values))
+                        throw new ParseException("Illegal route rule \"" + rule + "\", The error char '" + separator
+                                + "' at index " + matcher.start() + " before \"" + content + "\".", matcher.start());
+                    values.add(content);
+                } else {
+                    throw new ParseException("Illegal route rule \"" + rule + "\", The error char '" + separator + "' at index "
+                            + matcher.start() + " before \"" + content + "\".", matcher.start());
+                }
             }
         }
         return condition;
     }
 
     private static final class MatchPair {
-        final Set<String> matches = new HashSet<String>();
-        final Set<String> mismatches = new HashSet<String>();
+        final Set<String> matches = Sets.newHashSet();
+        final Set<String> mismatches = Sets.newHashSet();
 
         public boolean isMatch(String value, URL param) {
             for (String match : matches) {

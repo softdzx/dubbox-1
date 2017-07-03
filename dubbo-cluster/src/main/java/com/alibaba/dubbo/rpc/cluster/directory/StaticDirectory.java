@@ -15,38 +15,39 @@
  */
 package com.alibaba.dubbo.rpc.cluster.directory;
 
-import java.util.List;
-
 import com.alibaba.dubbo.common.URL;
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.rpc.Invocation;
 import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.alibaba.dubbo.rpc.cluster.Router;
 
+import java.util.List;
+
 /**
  * StaticDirectory
- * 
+ *
  * @author william.liangf
  */
 public class StaticDirectory<T> extends AbstractDirectory<T> {
-    
+
     private final List<Invoker<T>> invokers;
-    
-    public StaticDirectory(List<Invoker<T>> invokers){
+
+    public StaticDirectory(List<Invoker<T>> invokers) {
         this(null, invokers, null);
     }
-    
-    public StaticDirectory(List<Invoker<T>> invokers, List<Router> routers){
+
+    public StaticDirectory(List<Invoker<T>> invokers, List<Router> routers) {
         this(null, invokers, routers);
     }
-    
+
     public StaticDirectory(URL url, List<Invoker<T>> invokers) {
         this(url, invokers, null);
     }
 
     public StaticDirectory(URL url, List<Invoker<T>> invokers, List<Router> routers) {
-        super(url == null && invokers != null && invokers.size() > 0 ? invokers.get(0).getUrl() : url, routers);
-        if (invokers == null || invokers.size() == 0)
+        super(url == null && !CollectionUtils.isEmpty(invokers) ? invokers.get(0).getUrl() : url, routers);
+        if (CollectionUtils.isEmpty(invokers))
             throw new IllegalArgumentException("invokers == null");
         this.invokers = invokers;
     }
@@ -68,7 +69,7 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
     }
 
     public void destroy() {
-        if(isDestroyed()) {
+        if (isDestroyed()) {
             return;
         }
         super.destroy();
@@ -77,7 +78,7 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         }
         invokers.clear();
     }
-    
+
     @Override
     protected List<Invoker<T>> doList(Invocation invocation) throws RpcException {
 

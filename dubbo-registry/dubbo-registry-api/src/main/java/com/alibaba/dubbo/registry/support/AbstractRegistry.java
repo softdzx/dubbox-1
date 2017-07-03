@@ -74,11 +74,10 @@ public abstract class AbstractRegistry implements Registry {
         File file = null;
         if (ConfigUtils.isNotEmpty(filename)) {
             file = new File(filename);
-            File parentFile = file.getParentFile();
-            if (!file.exists() && parentFile != null && !parentFile.exists()) {
-                if (!parentFile.mkdirs()) {
+            if (!file.exists() && file.getParentFile() != null && !file.getParentFile().exists()) {
+                if (!file.getParentFile().mkdirs()) {
                     throw new IllegalArgumentException("Invalid registry store file " + file +
-                            ", cause: Failed to create directory " + parentFile + "!");
+                            ", cause: Failed to create directory " + file.getParentFile() + "!");
                 }
             }
         }
