@@ -19,15 +19,14 @@ import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.common.utils.ExecutorUtil;
-import com.alibaba.dubbo.common.utils.NamedThreadFactory;
-import com.alibaba.dubbo.common.utils.NetUtils;
+import com.alibaba.dubbo.common.utils.*;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
 import com.alibaba.dubbo.remoting.RemotingException;
 import com.alibaba.dubbo.remoting.Server;
 import com.alibaba.dubbo.remoting.transport.AbstractServer;
 import com.alibaba.dubbo.remoting.transport.dispatcher.ChannelHandlers;
+import com.google.common.collect.Sets;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -35,12 +34,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 
 /**
  * NettyServer
- * 
+ *
  * @author qian.lei
  * @author chao.liuc
  * @author wuwen
@@ -49,7 +47,7 @@ public class NettyServer extends AbstractServer implements Server {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
 
-    private Map<String, Channel>  channels; // <ip:port, channel>
+    private Map<String, Channel> channels; // <ip:port, channel>
 
     private io.netty.channel.Channel channel;
 
@@ -57,7 +55,7 @@ public class NettyServer extends AbstractServer implements Server {
 
     private EventLoopGroup workerGroup;
 
-    public NettyServer(URL url, ChannelHandler handler) throws RemotingException{
+    public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
@@ -65,12 +63,13 @@ public class NettyServer extends AbstractServer implements Server {
     protected void doOpen() throws Throwable {
         NettyHelper.setNettyLoggerFactory();
         ServerBootstrap bootstrap = new ServerBootstrap();
-        
+
         final NettyHandler nettyHandler = new NettyHandler(getUrl(), this);
         channels = nettyHandler.getChannels();
 
         bossGroup = new NioEventLoopGroup(1, (new NamedThreadFactory("NettyServerBoss", true)));
-        workerGroup = new NioEventLoopGroup(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS), new NamedThreadFactory("NettyServerWorker", true));
+        workerGroup = new NioEventLoopGroup(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
+                new NamedThreadFactory("NettyServerWorker", true));
 
         bootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class);
         bootstrap.childOption(ChannelOption.TCP_NODELAY, false);
@@ -106,17 +105,13 @@ public class NettyServer extends AbstractServer implements Server {
         }
         try {
             Collection<com.alibaba.dubbo.remoting.Channel> channels = getChannels();
-            if (channels != null && channels.size() > 0) {
+            if (!CollectionUtils.isEmpty(channels)) {
                 for (com.alibaba.dubbo.remoting.Channel channel : channels) {
-                    try {
-                        channel.close();
-                    } catch (Throwable e) {
-                        logger.warn(e.getMessage(), e);
-                    }
+                    channel.close();
                 }
             }
         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+            LogHelper.warn(logger, e.getMessage(), e);
         }
 
         try {
@@ -128,7 +123,7 @@ public class NettyServer extends AbstractServer implements Server {
                 workerGroup.shutdownGracefully();
             }
         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+            LogHelper.warn(logger, e.getMessage(), e);
         }
 
         try {
@@ -136,12 +131,12 @@ public class NettyServer extends AbstractServer implements Server {
                 channels.clear();
             }
         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+            LogHelper.warn(logger, e.getMessage(), e);
         }
     }
-    
+
     public Collection<Channel> getChannels() {
-        Collection<Channel> chs = new HashSet<>();
+        Collection<Channel> chs = Sets.newHashSet();
         for (Channel channel : this.channels.values()) {
             if (channel.isConnected()) {
                 chs.add(channel);

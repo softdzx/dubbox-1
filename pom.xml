@@ -66,10 +66,10 @@
         <java.vesion>1.8</java.vesion>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <!-- Common libs -->
-        <!--<netty3.version>3.10.6.Final</netty3.version>-->
+        <netty.version>4.1.11.Final</netty.version>
         <hessian_lite.version>3.2.1-fixed-2</hessian_lite.version>
         <zookeeper.version>3.4.10</zookeeper.version>
-        <curator.version>2.12.0</curator.version>
+        <curator.version>3.3.0</curator.version>
         <consul-api.version>1.2.3</consul-api.version>
         <jfreechart.version>1.0.19</jfreechart.version>
         <!-- Test libs -->

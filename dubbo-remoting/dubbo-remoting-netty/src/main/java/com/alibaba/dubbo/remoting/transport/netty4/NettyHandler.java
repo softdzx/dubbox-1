@@ -1,50 +1,29 @@
-/*
- * Copyright 1999-2011 Alibaba Group.
- *  
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alibaba.dubbo.remoting.transport.netty4;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.remoting.Channel;
 import com.alibaba.dubbo.remoting.ChannelHandler;
+import com.google.common.collect.Maps;
 import io.netty.channel.*;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * NettyHandler
- * 
- * @author william.liangf
- * @author wuwen
- */
 @io.netty.channel.ChannelHandler.Sharable
 public class NettyHandler extends ChannelHandlerAdapter implements ChannelOutboundHandler, ChannelInboundHandler {
 
     /**
      * channels, key is ip:port, and value is channel
      */
-    private final Map<String, Channel> channels = new ConcurrentHashMap<>();
-    
+    private final Map<String, Channel> channels = Maps.newConcurrentMap();
+
     private final URL url;
-    
+
     private final ChannelHandler handler;
 
-    public NettyHandler(URL url, ChannelHandler handler){
+    public NettyHandler(URL url, ChannelHandler handler) {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
         }
@@ -93,7 +72,7 @@ public class NettyHandler extends ChannelHandlerAdapter implements ChannelOutbou
     }
 
     @Override
-    public void disconnect(io.netty.channel.ChannelHandlerContext ctx, io.netty.channel.ChannelPromise channelPromise) throws java.lang.Exception {
+    public void disconnect(ChannelHandlerContext ctx, ChannelPromise channelPromise) throws java.lang.Exception {
         ctx.disconnect(channelPromise);
     }
 
@@ -110,7 +89,7 @@ public class NettyHandler extends ChannelHandlerAdapter implements ChannelOutbou
     }
 
     @Override
-    public void channelRead(io.netty.channel.ChannelHandlerContext ctx, Object msg) throws java.lang.Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws java.lang.Exception {
 
         @SuppressWarnings("unchecked")
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
