@@ -154,12 +154,7 @@ public class RestfuleUrlRewriter implements RewriteSubstitutionHandler {
 
         String method = param.get(METHOD_KEY);
 
-        String defaultRedirect = null;
-        if (method == null || method.equals("index")) {
-            defaultRedirect = oldPath;
-        } else {
-            defaultRedirect = oldPath.split("/" + method)[0];
-        }
+        String defaultRedirect = null == method || "index".equals(method) ? oldPath : oldPath.split("/" + method)[0];
         String id = param.get(ID_KEY);
         if (id != null) {
             int i = defaultRedirect.lastIndexOf("/");

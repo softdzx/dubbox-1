@@ -4,25 +4,23 @@ import com.alibaba.citrus.service.pipeline.PipelineContext;
 import com.alibaba.citrus.service.pipeline.support.AbstractValve;
 import com.alibaba.citrus.turbine.TurbineRunData;
 import com.alibaba.dubbo.governance.web.common.i18n.LocaleUtil;
+import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
 import static com.alibaba.citrus.turbine.util.TurbineUtil.getTurbineRunData;
 
-/**
- * @author guanghui.shigh
- */
 public class LocaleValve extends AbstractValve {
 
     @Autowired
     private HttpServletRequest request;
 
     //添加拦截器例外设置
-    private final static Set<String> TARGET_WITHOUT_CHECK = new HashSet<String>();
+    private final static Set<String> TARGET_WITHOUT_CHECK = Sets.newHashSet();
 
     static {
         TARGET_WITHOUT_CHECK.add("/ok");
@@ -56,7 +54,7 @@ public class LocaleValve extends AbstractValve {
                 locale = temp[0];
             }
         }
-        if (locale == null || "".equals(locale)) {
+        if (Strings.isNullOrEmpty(locale)) {
             locale = "zh";
         }
 

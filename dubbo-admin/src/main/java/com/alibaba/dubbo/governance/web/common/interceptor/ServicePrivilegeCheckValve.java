@@ -13,6 +13,7 @@ import com.alibaba.citrus.service.pipeline.support.AbstractValve;
 import com.alibaba.citrus.turbine.TurbineRunData;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.LogHelper;
 import com.alibaba.dubbo.governance.web.util.WebConstants;
 import com.alibaba.dubbo.registry.common.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.util.Map;
 import static com.alibaba.citrus.turbine.util.TurbineUtil.getTurbineRunData;
 
 public class ServicePrivilegeCheckValve extends AbstractValve {
+
     private static final Logger logger = LoggerFactory.getLogger(ServicePrivilegeCheckValve.class);
 
     @Autowired
@@ -79,13 +81,11 @@ public class ServicePrivilegeCheckValve extends AbstractValve {
 
     /**
      * 无权限跳转
+     *
      * @param rundata
      */
     private void redirectToNoRight(TurbineRunData rundata) {
-        if (logger.isInfoEnabled()) {
-            logger.info("No right to access: " + request.getRequestURI());
-        }
-
+        LogHelper.info(logger, "No right to access: " + request.getRequestURI());
         rundata.getParameters().setString("returnURL1", (String) rundata.getRequest().getAttribute("returnURL"));
         rundata.setRedirectLocation("http://localhost:8080/governance/noServicePrivilege?returnURL="
                 + rundata.getRequest().getAttribute("returnURL"));

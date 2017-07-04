@@ -1,24 +1,16 @@
-/**
- * Project: dubbo.registry.server
- * <p>
- * File Created at Oct 19, 2010
- * $Id: ParseUtils.java 181192 2012-06-21 05:05:47Z tony.chenl $
- * <p>
- * Copyright 1999-2100 Alibaba.com Corporation Limited.
- * All rights reserved.
- * <p>
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.registry.common.route;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
+import com.alibaba.dubbo.common.utils.UrlUtils;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,13 +35,13 @@ public class ParseUtils {
      * 执行interpolation(变量插入)。
      *
      * @param expression 含有变量的表达式字符串。表达式中的变量名也可以用<code>{}</code>括起来。
-     * @param params 变量集。变量名可以包含<code>.</code>、<code>_</code>字符。
+     * @param params     变量集。变量名可以包含<code>.</code>、<code>_</code>字符。
      * @return 完成interpolation后的字符串。 如：<code><pre>xxx${name}zzz -> xxxjerryzzz</pre></code>（其中变量name="jerry"）
      * @throws IllegalStateException 表达式字符串中使用到的变量 在变量集中没有
      */
     // FIMXE 抛出IllegalStateException异常，是否合适？！
     public static String interpolate(String expression, Map<String, String> params) {
-        if (expression == null || expression.length() == 0) {
+        if (Strings.isNullOrEmpty(expression)) {
             throw new IllegalArgumentException("glob pattern is empty!");
         }
         if (expression.indexOf('$') < 0) {
@@ -70,9 +62,9 @@ public class ParseUtils {
     }
 
     public static List<String> interpolate(List<String> expressions, Map<String, String> params) {
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = Lists.newArrayList();
 
-        if (null == expressions || expressions.isEmpty()) {
+        if (CollectionUtils.isEmpty(expressions)) {
             return ret;
         }
 
@@ -83,48 +75,12 @@ public class ParseUtils {
         return ret;
     }
 
-
-    /**
-     * 匹配Glob模式。目前的实现只支持<code>*</code>，且只支持一个。不支持<code>?</code>。
-     * @return 对于方法参数pattern或是value为<code>null</code>的情况，直接返回<code>false</code>。
-     */
-    public static boolean isMatchGlobPattern(String pattern, String value) {
-        if ("*".equals(pattern))
-            return true;
-        if ((pattern == null || pattern.length() == 0)
-                && (value == null || value.length() == 0))
-            return true;
-        if ((pattern == null || pattern.length() == 0)
-                || (value == null || value.length() == 0))
-            return false;
-
-        int i = pattern.lastIndexOf('*');
-        // 没有找到星号
-        if (i == -1) {
-            return value.equals(pattern);
-        }
-        // 星号在末尾
-        else if (i == pattern.length() - 1) {
-            return value.startsWith(pattern.substring(0, i));
-        }
-        // 星号的开头
-        else if (i == 0) {
-            return value.endsWith(pattern.substring(i + 1));
-        }
-        // 星号的字符串的中间
-        else {
-            String prefix = pattern.substring(0, i);
-            String suffix = pattern.substring(i + 1);
-            return value.startsWith(prefix) && value.endsWith(suffix);
-        }
-    }
-
     /**
      * 是否匹配Glob模式。Glob模式是要插值的表达式。Glob模式有多个，只要匹配一个模式，就认为匹配成功。
      *
      * @param patternsNeedInterpolate 多个要进行插值的Glob模式
-     * @param interpolateParams 用于插值的变量集
-     * @param value 进行Glob模式的值
+     * @param interpolateParams       用于插值的变量集
+     * @param value                   进行Glob模式的值
      */
     public static boolean isMatchGlobPatternsNeedInterpolate(
             Collection<String> patternsNeedInterpolate,
@@ -136,7 +92,7 @@ public class ParseUtils {
                 }
                 // FIXME ERROR!! 原来的实现，这里只和第一个不为空的pattern比较，返回对应的结果！ 和梁飞确认
                 String pattern = interpolate(patternNeedItp, interpolateParams);
-                if (isMatchGlobPattern(pattern, value)) {
+                if (UrlUtils.isMatchGlobPattern(pattern, value)) {
                     return true;
                 }
             }
@@ -148,13 +104,13 @@ public class ParseUtils {
      * 返回集合中与Glob模式匹配的条目。
      */
     public static Set<String> filterByGlobPattern(String pattern, Collection<String> values) {
-        Set<String> ret = new HashSet<String>();
+        Set<String> ret = Sets.newHashSet();
         if (pattern == null || values == null) {
             return ret;
         }
 
         for (String v : values) {
-            if (isMatchGlobPattern(pattern, v)) {
+            if (UrlUtils.isMatchGlobPattern(pattern, v)) {
                 ret.add(v);
             }
         }
@@ -162,17 +118,17 @@ public class ParseUtils {
     }
 
     /**
-     * 找到了配合Glob模式的字符串。模式有多个，只要匹配一个模式，就返回这个字符串。 
+     * 找到了配合Glob模式的字符串。模式有多个，只要匹配一个模式，就返回这个字符串。
      */
     public static Set<String> filterByGlobPattern(Collection<String> patterns, Collection<String> values) {
-        Set<String> ret = new HashSet<String>();
-        if (null == patterns || values == null || patterns.isEmpty() || values.isEmpty()) {
+        Set<String> ret = Sets.newHashSet();
+        if (CollectionUtils.isEmpty(patterns) || CollectionUtils.isEmpty(values)) {
             return ret;
         }
 
         for (String p : patterns) {
             for (String v : values) {
-                if (isMatchGlobPattern(p, v)) {
+                if (UrlUtils.isMatchGlobPattern(p, v)) {
                     ret.add(v);
                 }
             }
@@ -202,9 +158,9 @@ public class ParseUtils {
             if (!s12.endsWith(s22) && !s22.endsWith(s12)) return false;
             return true;
         } else if (glob1.contains("*")) {
-            return isMatchGlobPattern(glob1, glob2);
+            return UrlUtils.isMatchGlobPattern(glob1, glob2);
         } else if (glob2.contains("*")) {
-            return isMatchGlobPattern(glob2, glob1);
+            return UrlUtils.isMatchGlobPattern(glob2, glob1);
         } else {
             return glob1.equals(glob2);
         }
@@ -217,50 +173,40 @@ public class ParseUtils {
      * 把Query String解析成Map。对于有只有Key的串<code>key3=</code>，忽略。
      *
      * @param keyPrefix 在输出的Map的Key加上统一前缀。
-     * @param query Query String，形如：<code>key1=value1&key2=value2</code>
+     * @param query     Query String，形如：<code>key1=value1&key2=value2</code>
      * @return Query String为<code>key1=value1&key2=value2</code>，前缀为<code>pre.</code>时，
-     *         则返回<code>Map{pre.key1=value1, pre.key=value2}</code>。
+     * 则返回<code>Map{pre.key1=value1, pre.key=value2}</code>。
      */
     // FIXME 抛出的是IllegalStateException异常，是否合理？！
     public static Map<String, String> parseQuery(String keyPrefix, String query) {
         if (query == null)
-            return new HashMap<String, String>();
+            return Maps.newHashMap();
         if (keyPrefix == null)
             keyPrefix = "";
 
         Matcher matcher = QUERY_PATTERN.matcher(query);
-        Map<String, String> routeQuery = new HashMap<String, String>();
+        Map<String, String> routeQuery = Maps.newHashMap();
         String key = null;
         while (matcher.find()) { // 逐个匹配
             String separator = matcher.group(1);
             String content = matcher.group(2);
-            if (separator == null || separator.length() == 0
-                    || "&".equals(separator)) {
+            if (Strings.isNullOrEmpty(separator) || "&".equals(separator)) {
                 if (key != null)
-                    throw new IllegalStateException("Illegal query string \""
-                            + query + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".");
+                    throw new IllegalStateException("Illegal query string \"" + query + "\", The error char '" + separator
+                            + "' at index " + matcher.start() + " before \"" + content + "\".");
                 key = content;
             } else if ("=".equals(separator)) {
                 if (key == null)
-                    throw new IllegalStateException("Illegal query string \""
-                            + query + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".");
+                    throw new IllegalStateException("Illegal query string \"" + query + "\", The error char '" + separator
+                            + "' at index " + matcher.start() + " before \"" + content + "\".");
                 routeQuery.put(keyPrefix + key, content);
                 key = null;
             } else {
                 if (key == null)
-                    throw new IllegalStateException("Illegal query string \""
-                            + query + "\", The error char '" + separator
-                            + "' at index " + matcher.start() + " before \""
-                            + content + "\".");
+                    throw new IllegalStateException("Illegal query string \"" + query + "\", The error char '" + separator
+                            + "' at index " + matcher.start() + " before \"" + content + "\".");
             }
         }
-        /*if (key != null)
-        throw new IllegalStateException("Illegal route rule \"" + query
-                + "\", The error in the end char: " + key);*/
         return routeQuery;
     }
 
@@ -268,16 +214,16 @@ public class ParseUtils {
         return parseQuery("", query);
     }
 
-    private static final ConcurrentMap<String, Pattern> REPLACE_PARAMETER_PATTERNS = new ConcurrentHashMap<String, Pattern>();
+    private static final ConcurrentMap<String, Pattern> REPLACE_PARAMETER_PATTERNS = Maps.newConcurrentMap();
 
     /**
      * 替换url中参数的值。
      */
     public static String replaceParameter(String query, String key, String value) {
-        if (query == null || query.length() == 0) {
+        if (Strings.isNullOrEmpty(query)) {
             return key + "=" + value;
         }
-        if (query.indexOf(key + "=") == -1) {
+        if (!query.contains(key + "=")) {
             return query + "&" + key + "=" + value;
         }
         Pattern pattern = REPLACE_PARAMETER_PATTERNS.get(key);

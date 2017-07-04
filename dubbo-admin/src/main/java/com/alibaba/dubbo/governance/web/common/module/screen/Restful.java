@@ -82,7 +82,7 @@ public abstract class Restful {
         try {
             Method m = null;
             try {
-                m = getClass().getMethod(method, new Class<?>[]{Map.class});
+                m = getClass().getMethod(method, Map.class);
             } catch (NoSuchMethodException e) {
                 for (Method mtd : getClass().getMethods()) {
                     if (Modifier.isPublic(mtd.getModifiers())
@@ -97,8 +97,7 @@ public abstract class Restful {
             }
             if (m.getParameterTypes().length > 2) {
                 throw new IllegalStateException("Unsupport restful method " + m);
-            } else if (m.getParameterTypes().length == 2
-                    && (m.getParameterTypes()[0].equals(Map.class)
+            } else if (m.getParameterTypes().length == 2 && (m.getParameterTypes()[0].equals(Map.class)
                     || !m.getParameterTypes()[1].equals(Map.class))) {
                 throw new IllegalStateException("Unsupport restful method " + m);
             }
@@ -123,8 +122,7 @@ public abstract class Restful {
                 } else {
                     value = t.newInstance();
                     for (Method mtd : t.getMethods()) {
-                        if (Modifier.isPublic(mtd.getModifiers())
-                                && mtd.getName().startsWith("set")
+                        if (Modifier.isPublic(mtd.getModifiers()) && mtd.getName().startsWith("set")
                                 && mtd.getParameterTypes().length == 1) {
                             String p = mtd.getName().substring(3, 4).toLowerCase() + mtd.getName().substring(4);
                             Object v = context.get(p);
@@ -137,7 +135,7 @@ public abstract class Restful {
                             }
                             if (v != null) {
                                 try {
-                                    mtd.invoke(value, new Object[]{CompatibleTypeUtils.compatibleTypeConvert(v, mtd.getParameterTypes()[0])});
+                                    mtd.invoke(value, CompatibleTypeUtils.compatibleTypeConvert(v, mtd.getParameterTypes()[0]));
                                 } catch (Throwable e) {
                                     logger.warn(e.getMessage(), e);
                                 }
@@ -146,18 +144,17 @@ public abstract class Restful {
                     }
                 }
                 if (m.getParameterTypes().length == 1) {
-                    r = m.invoke(this, new Object[]{value});
+                    r = m.invoke(this, value);
                 } else {
-                    r = m.invoke(this, new Object[]{value, context});
+                    r = m.invoke(this, value, context);
                 }
             }
             if (m.getReturnType() == boolean.class || m.getReturnType() == Boolean.class) {
                 context.put("rundata.layout", "redirect");
                 context.put("rundata.target", "redirect");
-                context.put("success", r == null || ((Boolean) r).booleanValue());
-                if (context.get("redirect") == null) {
-                    context.put("redirect", getDefaultRedirect(context, method));
-                }
+                context.put("success", r == null || (Boolean) r);
+                final String methodName = method;
+                context.computeIfAbsent("redirect", redirect -> getDefaultRedirect(context, methodName));
             } else if (m.getReturnType() == String.class) {
                 String redirect = (String) r;
                 if (redirect == null) {
@@ -178,15 +175,6 @@ public abstract class Restful {
             if (e instanceof InvocationTargetException) {
                 throw ((InvocationTargetException) e).getTargetException();
             }
-//            if (e instanceof InvocationTargetException) {
-//                e = ((InvocationTargetException) e).getTargetException();
-//            }
-//            logger.warn(e.getMessage(), e);
-//            context.put("rundata.layout", "redirect");
-//            context.put("rundata.target", "redirect");
-//            context.put("success", false);
-//            context.put("exception", e);
-//            context.put("redirect", getDefaultRedirect(context, method));
         }
     }
 
@@ -219,8 +207,7 @@ public abstract class Restful {
     }
 
     private String getDefaultRedirect(Map<String, Object> context, String operate) {
-        String defaultRedirect = (String) context.get("defaultRedirect");
-        return defaultRedirect;
+        return (String) context.get("defaultRedirect");
     }
 
 }

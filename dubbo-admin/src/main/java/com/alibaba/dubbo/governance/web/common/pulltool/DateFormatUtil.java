@@ -1,34 +1,32 @@
 package com.alibaba.dubbo.governance.web.common.pulltool;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * DateFormat Utility
- * 
+ *
  * @author guanghui.shigh
  */
 public class DateFormatUtil {
 
-    private static final String                               DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final String DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-    private static final ThreadLocal<Map<String, DateFormat>> tl             = new ThreadLocal<Map<String, DateFormat>>();
+    private static final ThreadLocal<Map<String, DateFormat>> tl = new ThreadLocal<>();
 
     /**
      * According to the specified format, Get a DateFormat
-     * 
-     * @param format
-     * @return
      */
     public static DateFormat getDateFormat(String format) {
         Map<String, DateFormat> map = tl.get();
 
         if (map == null) {
-            map = new HashMap<String, DateFormat>();
+            map = Maps.newHashMap();
             tl.set(map);
         }
 
@@ -48,7 +46,7 @@ public class DateFormatUtil {
 
     /**
      * Get Default DateFormat
-     * 
+     *
      * @return
      */
     public static DateFormat getDateFormat() {

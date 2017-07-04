@@ -1,26 +1,16 @@
-/**
- * Project: dubbo.registry.server
- * <p>
- * File Created at Oct 18, 2010
- * $Id: RouteRule.java 182348 2012-06-27 09:16:58Z tony.chenl $
- * <p>
- * Copyright 1999-2100 Alibaba.com Corporation Limited.
- * All rights reserved.
- * <p>
- * This software is the confidential and proprietary information of
- * Alibaba Company. ("Confidential Information").  You shall not
- * disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Alibaba.com.
- */
 package com.alibaba.dubbo.registry.common.route;
 
+import com.alibaba.dubbo.common.utils.CollectionUtils;
 import com.alibaba.dubbo.registry.common.domain.Route;
 import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,12 +23,12 @@ import java.util.regex.Pattern;
  * 使用条件对样本进行的匹配的过程称为“过滤”（或称为“筛选”）（Filter）。
  * 使用When条件过滤和使用Then条件过滤的样本，不需要是相同的集合。如在Dubbo中，分别对应的是Consumer和Provider。
  * 对于RouteRule（路由规则）含义即，符合When条件的Consumer，则对Provider进行Then过滤，出来的Provide即是提供给这个Consumer的Provider。<br>
- *
+ * <p>
  * Rule的字符串格式如下：<code>
  * key1 = value11,value12 & key2 = value21 & key2 != value22 => key3 = value3 & key4 = value41,vlaue42 & key5 !=value51
  * </code>。
  * <code>=></code>之前的称为When条件，是KV对；之后是Then条件，是KV对。KV的Value可以有多个值。<br><br>
- *
+ * <p>
  * 值对象，线程安全。
  *
  * @author william.liangf
@@ -46,14 +36,14 @@ import java.util.regex.Pattern;
  */
 public class RouteRule {
     public static class MatchPair {
-        Set<String> matches = new HashSet<String>();
-        Set<String> unmatches = new HashSet<String>();
+        Set<String> matches = Sets.newHashSet();
+        Set<String> unmatches = Sets.newHashSet();
 
         public MatchPair() {
         }
 
         public MatchPair(Set<String> matches, Set<String> unmatches) {
-            if (matches == null || unmatches == null) {
+            if (CollectionUtils.isEmpty(matches)) {
                 throw new IllegalArgumentException("argument of MatchPair is null!");
             }
 
@@ -154,7 +144,7 @@ public class RouteRule {
 
     public static Map<String, MatchPair> parseRule(String rule)
             throws ParseException {
-        Map<String, MatchPair> condition = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> condition = Maps.newHashMap();
         if (Strings.isNullOrEmpty(rule)) {
             return condition;
         }
@@ -167,7 +157,7 @@ public class RouteRule {
             String separator = matcher.group(1);
             String content = matcher.group(2);
             // 表达式开始
-            if (separator == null || separator.length() == 0) {
+            if (Strings.isNullOrEmpty(separator)) {
                 pair = new MatchPair();
                 condition.put(content, pair);
             }
@@ -241,11 +231,11 @@ public class RouteRule {
      * 把字符串形式的RouteRule的解析成对象。
      *
      * @throws ParseException RouteRule字符串格式不对了。以下输入的情况，RouteRule都是非法的。
-     * <ul> <li> 输入是<code>null</code>。
-     * <li> 输入是空串，或是空白串。
-     * <li> 输入的Rule，没有When条件
-     * <li> 输入的Rule，没有Then条件
-     * </ul>
+     *                        <ul> <li> 输入是<code>null</code>。
+     *                        <li> 输入是空串，或是空白串。
+     *                        <li> 输入的Rule，没有When条件
+     *                        <li> 输入的Rule，没有Then条件
+     *                        </ul>
      */
     public static RouteRule parse(Route route) throws ParseException {
         if (route == null)
@@ -260,9 +250,9 @@ public class RouteRule {
 
     public static RouteRule parse(String whenRule, String thenRule) throws ParseException {
         /*if (whenRule == null || whenRule.trim().length() == 0) {
-    		throw new ParseException("Illegal route rule without when express", 0);
+            throw new ParseException("Illegal route rule without when express", 0);
     	}*/
-        if (thenRule == null || thenRule.trim().length() == 0) {
+        if (Strings.isNullOrEmpty(thenRule)) {
             throw new ParseException("Illegal route rule without then express", 0);
         }
         Map<String, MatchPair> when = parseRule(whenRule.trim());
@@ -282,8 +272,8 @@ public class RouteRule {
     }
 
     /**
-     * @see #parse(String)
      * @throws RuntimeException 解析出错时，Wrap了{@link #parse(String)}方法的抛出的{@link ParseException}的异常。
+     * @see #parse(String)
      */
     public static RouteRule parseQuitely(Route route) {
         try {
@@ -296,7 +286,7 @@ public class RouteRule {
     private static Pattern VALUE_LIST_SEPARATOR = Pattern.compile("\\s*,\\s*");
 
     static Map<String, MatchPair> parseNameAndValueListString2Condition(Map<String, String> params, Map<String, String> notParams) {
-        Map<String, MatchPair> condition = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> condition = Maps.newHashMap();
 
         for (Entry<String, String> entry : params.entrySet()) {
             String valueListString = entry.getValue();
@@ -304,7 +294,7 @@ public class RouteRule {
                 continue;
             }
             String[] list = VALUE_LIST_SEPARATOR.split(valueListString);
-            Set<String> set = new HashSet<String>();
+            Set<String> set = Sets.newHashSet();
             for (String item : list) {
                 if (Strings.isNullOrEmpty(item)) {
                     continue;
@@ -315,13 +305,14 @@ public class RouteRule {
                 continue;
             }
 
-            String key = entry.getKey();
-            MatchPair matchPair = condition.get(key);
-            if (null == matchPair) {
-                matchPair = new MatchPair();
-                condition.put(key, matchPair);
-            }
-
+            MatchPair matchPair = condition.computeIfAbsent(entry.getKey(), pair -> {
+                return new MatchPair();
+            });
+//            MatchPair matchPair = condition.get(key);
+//            if (null == matchPair) {
+//                matchPair = new MatchPair();
+//                condition.put(key, matchPair);
+//            }
             matchPair.matches = set;
         }
         for (Entry<String, String> entry : notParams.entrySet()) {
@@ -330,7 +321,7 @@ public class RouteRule {
                 continue;
             }
             String[] list = VALUE_LIST_SEPARATOR.split(valueListString);
-            Set<String> set = new HashSet<String>();
+            Set<String> set = Sets.newHashSet();
             for (String item : list) {
                 if (Strings.isNullOrEmpty(item)) {
                     continue;
@@ -341,13 +332,9 @@ public class RouteRule {
                 continue;
             }
 
-            String key = entry.getKey();
-            MatchPair matchPair = condition.get(key);
-            if (null == matchPair) {
-                matchPair = new MatchPair();
-                condition.put(key, matchPair);
-            }
-
+            MatchPair matchPair = condition.computeIfAbsent(entry.getKey(), pair -> {
+                return new MatchPair();
+            });
             matchPair.unmatches = set;
         }
 
@@ -367,14 +354,14 @@ public class RouteRule {
     }
 
     public static RouteRule copyWithRemove(RouteRule copy, Set<String> whenParams, Set<String> thenParams) {
-        Map<String, MatchPair> when = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> when = Maps.newHashMap();
         for (Entry<String, MatchPair> entry : copy.getWhenCondition().entrySet()) {
             if (whenParams == null || !whenParams.contains(entry.getKey())) {
                 when.put(entry.getKey(), entry.getValue());
             }
         }
 
-        Map<String, MatchPair> then = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> then = Maps.newHashMap();
         for (Entry<String, MatchPair> entry : copy.getThenCondition().entrySet()) {
             if (thenParams == null || !thenParams.contains(entry.getKey())) {
                 then.put(entry.getKey(), entry.getValue());
@@ -387,7 +374,7 @@ public class RouteRule {
     /**
      * 使用新的条件值来替换。
      *
-     * @param copy 替换的Base
+     * @param copy          替换的Base
      * @param whenCondition 要替换的whenCondition，如果Base没有项目，则直接插入。
      * @param thenCondition 要替换的thenCondition，如果Base没有项目，则直接插入。
      * @return 替换后的RouteRule
@@ -397,13 +384,13 @@ public class RouteRule {
             throw new NullPointerException("Argument copy is null!");
         }
 
-        Map<String, MatchPair> when = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> when = Maps.newHashMap();
         when.putAll(copy.getWhenCondition());
         if (whenCondition != null) {
             when.putAll(whenCondition);
         }
 
-        Map<String, MatchPair> then = new HashMap<String, RouteRule.MatchPair>();
+        Map<String, MatchPair> then = Maps.newHashMap();
         then.putAll(copy.getThenCondition());
         if (thenCondition != null) {
             then.putAll(thenCondition);
